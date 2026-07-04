@@ -1,22 +1,12 @@
 from kubernetes import client, config
 
-# Load your local Kubernetes configuration
 config.load_kube_config()
 
-# Kubernetes API clients
 v1 = client.CoreV1Api()
 apps_v1 = client.AppsV1Api()
 
 
 def list_pods():
-    """
-    Return all pods with their current status.
-    Detects waiting/terminated states such as:
-    - ImagePullBackOff
-    - CrashLoopBackOff
-    - ErrImagePull
-    """
-
     pods = v1.list_namespaced_pod(namespace="default")
 
     results = []
@@ -46,10 +36,6 @@ def list_pods():
 
 
 def get_pod_events(pod_name: str):
-    """
-    Return Kubernetes events for a specific pod.
-    """
-
     events = v1.list_namespaced_event(namespace="default")
 
     results = []
@@ -72,11 +58,28 @@ def get_pod_events(pod_name: str):
     return results
 
 
-def list_deployments():
-    """
-    Return all deployments in the default namespace.
-    """
+def get_pod_logs(pod_name: str):
+    try:
+        logs = v1.read_namespaced_pod_log(
+            name=pod_name,
+            namespace="default",
+            tail_lines=100,
+        )
 
+        return {
+            "pod": pod_name,
+            "logs": logs,
+        }
+
+    except Exception as e:
+        return {
+            "pod": pod_name,
+            "logs": "",
+            "error": str(e),
+        }
+
+
+def list_deployments():
     deployments = apps_v1.list_namespaced_deployment(namespace="default")
 
     results = []
@@ -87,8 +90,8 @@ def list_deployments():
             {
                 "name": deployment.metadata.name,
                 "replicas": deployment.spec.replicas,
-                "available": deployment.status.available_replicas or 0,
                 "ready": deployment.status.ready_replicas or 0,
+                "available": deployment.status.available_replicas or 0,
             }
         )
 
