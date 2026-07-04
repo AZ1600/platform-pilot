@@ -42,26 +42,41 @@ def logs(pod_name: str):
 
 @app.get("/risks")
 def risks():
-
     pods = list_pods()
-
     results = []
 
     for pod in pods:
-
         if pod["status"] != "Running":
-
             analysis = analyze_pod(pod)
-
-            results.append(
-                {
-                    **pod,
-                    **analysis,
-                }
-            )
+            results.append({**pod, **analysis})
 
     return {
         "total_pods": len(pods),
         "risk_count": len(results),
         "risks": results,
+    }
+
+
+@app.get("/analysis")
+def analysis():
+    pods = list_pods()
+    results = []
+
+    for pod in pods:
+        if pod["status"] != "Running":
+            events = get_pod_events(pod["name"])
+            logs = get_pod_logs(pod["name"])
+            recommendation = analyze_pod(pod)
+
+            results.append({
+                "pod": pod,
+                "events": events,
+                "logs": logs,
+                "analysis": recommendation,
+            })
+
+    return {
+        "total_pods": len(pods),
+        "issue_count": len(results),
+        "issues": results,
     }
