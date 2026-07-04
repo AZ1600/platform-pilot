@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platformpilot-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: platformpilot-api
+  template:
+    metadata:
+      labels:
+        app: platformpilot-api
+    spec:
+      containers:
+        - name: platformpilot-api
+          image: platformpilot-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
