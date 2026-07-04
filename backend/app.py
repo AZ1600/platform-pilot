@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from kubernetes_client import (
     list_pods,
     get_pod_events,
@@ -8,6 +10,14 @@ from kubernetes_client import (
 from ai import analyze_pod
 
 app = FastAPI(title="PlatformPilot API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -79,4 +89,31 @@ def analysis():
         "total_pods": len(pods),
         "issue_count": len(results),
         "issues": results,
+    }
+
+@app.get("/dashboard")
+def dashboard():
+
+    pods = list_pods()
+    deployments = list_deployments()
+
+    incidents = []
+
+    for pod in pods:
+
+        if pod["status"] != "Running":
+
+            incidents.append({
+                **pod,
+                **analyze_pod(pod),
+                "events": get_pod_events(pod["name"]),
+                "logs": get_pod_logs(pod["name"]),
+            })
+
+    return {
+        "cluster_status": "Healthy" if len(incidents) == 0 else "Warning",
+        "pods": len(pods),
+        "deployments": len(deployments),
+        "active_risks": len(incidents),
+        "incidents": incidents,
     }
