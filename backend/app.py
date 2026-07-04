@@ -4,22 +4,19 @@ from kubernetes_client import (
     get_pod_events,
     list_deployments,
 )
+from ai import analyze_pod
 
 app = FastAPI(title="PlatformPilot API")
 
 
 @app.get("/")
 def root():
-    return {
-        "message": "🚀 PlatformPilot API"
-    }
+    return {"message": "🚀 PlatformPilot API"}
 
 
 @app.get("/health")
 def health():
-    return {
-        "status": "healthy"
-    }
+    return {"status": "healthy"}
 
 
 @app.get("/pods")
@@ -39,18 +36,16 @@ def events(pod_name: str):
 
 @app.get("/risks")
 def risks():
-
     pods = list_pods()
-
-    risky = []
+    results = []
 
     for pod in pods:
-
         if pod["status"] != "Running":
-            risky.append(pod)
+            analysis = analyze_pod(pod)
+            results.append({**pod, **analysis})
 
     return {
         "total_pods": len(pods),
-        "risk_count": len(risky),
-        "risks": risky,
+        "risk_count": len(results),
+        "risks": results,
     }
