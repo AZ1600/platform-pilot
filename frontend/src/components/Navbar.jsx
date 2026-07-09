@@ -5,12 +5,13 @@ function Navbar() {
     <header className="navbar">
       <h1>🚀 PlatformPilot</h1>
 
-      <nav>
+      <nav className="nav-links">
         <Link to="/">Dashboard</Link>
         <Link to="/pods">Pods</Link>
         <Link to="/deployments">Deployments</Link>
         <Link to="/nodes">Nodes</Link>
         <Link to="/namespaces">Namespaces</Link>
+        <Link to="/ai-summary">AI Summary</Link>
       </nav>
     </header>
   );

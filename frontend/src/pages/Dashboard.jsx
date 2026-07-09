@@ -1,44 +1,26 @@
 import { useEffect, useState } from "react";
-import { getDashboard } from "../services/api";
 
+import { getClusterSummary } from "../services/api";
 import MetricCard from "../components/MetricCard";
-import IncidentCard from "../components/IncidentCard";
-
-import "../App.css";
 
 function Dashboard() {
-  const [dashboard, setDashboard] = useState(null);
-  const [error, setError] = useState(null);
-
-  async function loadDashboard() {
-    try {
-      const data = await getDashboard();
-      setDashboard(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  }
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    loadDashboard();
+    async function load() {
+      const result = await getClusterSummary();
+      setData(result);
+    }
 
-    const interval = setInterval(loadDashboard, 5000);
-
-    return () => clearInterval(interval);
+    load();
   }, []);
 
-  if (error) {
+  if (!data) {
     return (
       <div className="container">
-        <h2>{error}</h2>
-      </div>
-    );
-  }
-
-  if (!dashboard) {
-    return (
-      <div className="container">
-        <h2>Loading PlatformPilot...</h2>
+        <div className="card">
+          <h2>Loading dashboard...</h2>
+        </div>
       </div>
     );
   }
@@ -46,39 +28,28 @@ function Dashboard() {
   return (
     <div className="container">
       <div className="card">
-        <h2>
-          Cluster Status{" "}
-          {dashboard.cluster_status === "Healthy"
-            ? "🟢 Healthy"
-            : "🟠 Warning"}
-        </h2>
+        <h1>📊 Dashboard</h1>
+        <p>Live Kubernetes cluster overview</p>
       </div>
 
-      <div className="metrics">
-        <MetricCard title="Pods" value={dashboard.pods} />
-        <MetricCard
-          title="Deployments"
-          value={dashboard.deployments}
-        />
-        <MetricCard
-          title="Risks"
-          value={dashboard.active_risks}
-        />
+      <div className="dashboard-grid">
+        <MetricCard title="Health Score" value={`${data.health_score}/100`} />
+        <MetricCard title="Running Pods" value={data.running_pods} />
+        <MetricCard title="Healthy Deployments" value={data.healthy_deployments} />
+        <MetricCard title="Failed Pods" value={data.failed_pods} />
       </div>
 
       <div className="card">
-        <h2>🚨 Active Incidents</h2>
+        <h2>🤖 AI Summary</h2>
+        <p>{data.summary}</p>
 
-        {dashboard.incidents.length === 0 ? (
-          <p>✅ No active incidents</p>
-        ) : (
-          dashboard.incidents.map((incident, index) => (
-            <IncidentCard
-              key={index}
-              incident={incident}
-            />
-          ))
-        )}
+        <h3>Recommendations</h3>
+
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {data.recommendations.map((item, index) => (
+            <li key={index}>✅ {item}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
