@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getNodes } from "../services/api";
-import StatusBadge from "../components/StatusBadge.jsx";
 
 function Nodes() {
   const [nodes, setNodes] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -19,6 +20,10 @@ function Nodes() {
     }
 
     load();
+
+    const interval = setInterval(load, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (error) {
@@ -31,10 +36,46 @@ function Nodes() {
     );
   }
 
+  const filtered = nodes.filter((node) => {
+    const matchesSearch = node.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesFilter =
+      filter === "All" ||
+      (filter === "Ready" && node.status === "Ready") ||
+      (filter === "Not Ready" && node.status !== "Ready");
+
+    return matchesSearch && matchesFilter;
+  });
+
   return (
-    <div className="container">
+    <div className="page">
       <div className="card">
         <h1>🖥️ Nodes</h1>
+
+        <div className="toolbar">
+          <input
+            className="search-input"
+            placeholder="Search nodes..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="filter-select"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option>All</option>
+            <option>Ready</option>
+            <option>Not Ready</option>
+          </select>
+        </div>
+
+        <p className="result-count">
+          Showing {filtered.length} of {nodes.length} nodes
+        </p>
 
         <table className="resource-table">
           <thead>
@@ -47,16 +88,22 @@ function Nodes() {
           </thead>
 
           <tbody>
-            {nodes.map((node) => (
+            {filtered.map((node) => (
               <tr key={node.name}>
                 <td>
-                  <Link to={`/nodes/${node.name}`}>
-                    {node.name}
-                  </Link>
+                  <Link to={`/nodes/${node.name}`}>{node.name}</Link>
                 </td>
 
                 <td>
-                  <StatusBadge status={node.status} />
+                  <span
+                    className={
+                      node.status === "Ready"
+                        ? "status-running"
+                        : "status-failed"
+                    }
+                  >
+                    {node.status}
+                  </span>
                 </td>
 
                 <td>{node.kubelet_version}</td>
@@ -65,6 +112,10 @@ function Nodes() {
             ))}
           </tbody>
         </table>
+
+        {filtered.length === 0 && (
+          <p className="empty-state">No nodes found.</p>
+        )}
       </div>
     </div>
   );

@@ -235,3 +235,76 @@ a {
 .refresh-btn:hover {
   background: #1d4ed8;
 }
+
+.toolbar {
+  display: flex;
+  gap: 16px;
+  margin: 24px 0 10px;
+  flex-wrap: wrap;
+}
+
+.search-input,
+.filter-select {
+  background: #0f111a;
+  color: white;
+  border: 1px solid #2c3445;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 16px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 260px;
+}
+
+.filter-select {
+  min-width: 180px;
+}
+
+.result-count {
+  color: #9ca3af;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.empty-state {
+  margin-top: 20px;
+  color: #9ca3af;
+}
+
+.status-running {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+}
+
+.status-failed {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: white;
+  font-weight: 600;
+}
+
+.status-running {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+}
+
+.status-failed {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: white;
+  font-weight: 600;
+}

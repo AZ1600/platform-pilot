@@ -1,90 +1,242 @@
 # 🚀 PlatformPilot
 
-PlatformPilot is an AI-assisted platform engineering dashboard for Kubernetes.
+PlatformPilot is an AI-powered Kubernetes Operations Dashboard built with **React**, **FastAPI**, and the **Kubernetes Python Client**.
 
-It helps platform engineers monitor cluster health, investigate incidents, and understand infrastructure issues from a single interface.
+It provides a modern interface for monitoring Kubernetes clusters, inspecting workloads, and generating AI-assisted operational insights.
+
+---
+## 📸 Screenshots
+
+### Dashboard
+
+![Dashboard](screenshots/dashboard.png)
+
+### Pods
+
+![Pods](screenshots/pods.png)
+
+### Pod Details
+
+![Pod Details](screenshots/pod-details.png)
+
+### Deployments
+
+![Deployments](screenshots/deployments.png)
+
+### Deployment Details
+
+![Deployment Details](screenshots/deployment-details.png)
+
+### Nodes
+
+![Nodes](screenshots/nodes.png)
+
+### Node Details
+
+![Node Details](screenshots/node-details.png)
+
+### Namespace Details
+
+![Namespace Details](screenshots/namespace-details.png)
+---
+
+# ✨ Features
+
+## 📊 Cluster Dashboard
+
+- Health Score
+- AI Cluster Summary
+- Active Incidents
+- Recent Kubernetes Events
+- Recommendations
+- Live Auto Refresh
+- Manual Refresh
 
 ---
 
-## Current Features
+## 📦 Pods
 
-- ✅ Kubernetes Pod Monitoring
-- ✅ Deployment Monitoring
-- ✅ Incident Detection
-- ✅ Kubernetes Events
-- ✅ Container Logs
-- ✅ AI-Powered Root Cause Analysis
-- ✅ AI Recommendations
-- ✅ React Dashboard
-- ✅ Live Auto Refresh
+- List Pods
+- Search Pods
+- Filter by Status
+- Pod Details
+- Live Pod Logs
+- Kubernetes Events
+- AI Analysis
 
 ---
 
-## Tech Stack
+## 🚀 Deployments
 
-### Backend
+- List Deployments
+- Search Deployments
+- Health Filter
+- Deployment Details
+- Replica Status
+- Conditions
+- AI Recommendations
+
+---
+
+## 🖥 Nodes
+
+- List Nodes
+- Search Nodes
+- Ready Filter
+- Node Details
+- Capacity
+- Allocatable Resources
+- AI Health Analysis
+
+---
+
+## 📁 Namespaces
+
+- List Namespaces
+- Search Namespaces
+- Status Filter
+- Namespace Details
+- Resource Counts
+- AI Summary
+
+---
+
+# 🛠 Tech Stack
+
+## Frontend
+
+- React
+- React Router
+- CSS3
+- Fetch API
+
+## Backend
 
 - FastAPI
 - Kubernetes Python Client
+- Uvicorn
 
-### Frontend
+## Kubernetes
 
-- React
-- Vite
-- React Router
-
-### Infrastructure
-
-- Docker
-- Kubernetes
-- Kind
+- Docker Desktop Kubernetes
+- kubectl
 
 ---
 
-## Project Structure
+# 📂 Project Structure
 
-```text
+```
+platform-pilot/
+
 backend/
+    app.py
+    ai.py
+    kubernetes_client.py
+
 frontend/
-infrastructure/
-docs/
+    src/
+        components/
+        pages/
+        services/
+
+README.md
 ```
 
 ---
 
-## Running PlatformPilot
+# 🚀 Getting Started
 
-### Backend
+## Clone
+
+```bash
+git clone https://github.com/AZ1600/platform-pilot.git
+
+cd platform-pilot
+```
+
+---
+
+## Backend
 
 ```bash
 cd backend
+
+python -m venv venv
+
 source venv/bin/activate
+
+pip install -r requirements.txt
+
 uvicorn app:app --reload
 ```
 
-### Frontend
+---
+
+## Frontend
 
 ```bash
 cd frontend
+
 npm install
+
 npm run dev
 ```
 
 ---
 
-## Roadmap
+## Open
 
-- Kubernetes Explorer
-- Deployment Viewer
-- Node Health
-- Namespace Explorer
-- AI Incident Reports
-- Prometheus Metrics
-- Cost Insights
-- Multi-Cluster Support
+```
+Frontend
+
+http://localhost:5173
+
+Backend
+
+http://localhost:8000
+```
 
 ---
 
-## License
+# 📈 Roadmap
+
+- [x] Dashboard
+- [x] Pod Monitoring
+- [x] Deployment Monitoring
+- [x] Node Monitoring
+- [x] Namespace Monitoring
+- [x] AI Recommendations
+- [x] Live Pod Logs
+- [x] Search & Filtering
+- [ ] Charts
+- [ ] Prometheus Metrics
+- [ ] WebSocket Live Updates
+- [ ] Multi-Cluster Support
+- [ ] Authentication
+
+---
+
+# 🤖 AI Features
+
+PlatformPilot uses AI-assisted analysis to provide:
+
+- Root Cause Analysis
+- Severity Classification
+- Recommended Actions
+- Suggested Owner
+
+---
+
+# 📄 License
 
 MIT
+
+---
+
+# 👨‍💻 Author
+
+**Olawale Azeez**
+
+GitHub:
+
+https://github.com/AZ1600
