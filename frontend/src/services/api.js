@@ -49,3 +49,8 @@ export async function getNamespace(name) {
   const res = await fetch(`${API_URL}/namespaces/${name}`);
   return res.json();
 }
+
+export async function getPodLogs(name) {
+  const response = await fetch(`${API_URL}/logs/${name}`);
+  return response.json();
+}
