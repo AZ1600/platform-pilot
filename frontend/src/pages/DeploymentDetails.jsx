@@ -1,19 +1,27 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { getDeployment } from "../services/api";
+import MetricCard from "../components/MetricCard";
+import StatusBadge from "../components/StatusBadge.jsx";
 
 function DeploymentDetails() {
   const { deploymentName } = useParams();
 
-  const [data, setData] = useState(null);
+  const [deployment, setDeployment] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const result = await getDeployment(deploymentName);
-        setData(result);
+        const data = await getDeployment(deploymentName);
+
+        if (data.error) {
+          setError(data.error);
+          return;
+        }
+
+        setDeployment(data);
       } catch (err) {
         setError(err.message);
       }
@@ -25,49 +33,100 @@ function DeploymentDetails() {
   if (error) {
     return (
       <div className="container">
-        <h2>{error}</h2>
+        <div className="card">
+          <h2>Error: {error}</h2>
+        </div>
       </div>
     );
   }
 
-  if (!data) {
+  if (!deployment) {
     return (
       <div className="container">
-        <h2>Loading...</h2>
+        <div className="card">
+          <h2>Loading deployment...</h2>
+        </div>
       </div>
     );
   }
 
-  const severityColor = {
-    Low: "#22c55e",
-    Medium: "#f59e0b",
-    High: "#ef4444",
-  };
+  const pods = deployment.pods || [];
+  const conditions = deployment.conditions || [];
 
   return (
     <div className="container">
+      <div className="card">
+        <h1>🚀 {deployment.name}</h1>
+        <p>
+          <strong>Namespace:</strong> {deployment.namespace}
+        </p>
+      </div>
+
+      <div className="dashboard-grid">
+        <MetricCard title="Desired Replicas" value={deployment.replicas} />
+        <MetricCard title="Ready Replicas" value={deployment.ready} />
+        <MetricCard title="Available" value={deployment.available} />
+        <MetricCard title="Pods" value={pods.length} />
+      </div>
 
       <div className="card">
-        <h1>🚀 {data.deployment.name}</h1>
+        <h2>📦 Related Pods</h2>
 
-        <p>
-          <strong>Status:</strong> {data.status}
-        </p>
+        {pods.length === 0 ? (
+          <p>No pods found for this deployment.</p>
+        ) : (
+          <table className="resource-table">
+            <thead>
+              <tr>
+                <th>Pod</th>
+              </tr>
+            </thead>
 
-        <p>
-          <strong>Desired Replicas:</strong>{" "}
-          {data.deployment.replicas}
-        </p>
+            <tbody>
+              {pods.map((pod) => (
+                <tr key={pod}>
+                  <td>
+                    <Link to={`/pods/${pod}`}>{pod}</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-        <p>
-          <strong>Ready Replicas:</strong>{" "}
-          {data.deployment.ready}
-        </p>
+      <div className="card">
+        <h2>📋 Deployment Conditions</h2>
 
-        <p>
-          <strong>Available Replicas:</strong>{" "}
-          {data.deployment.available}
-        </p>
+        {conditions.length === 0 ? (
+          <p>No deployment conditions found.</p>
+        ) : (
+          <table className="resource-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {conditions.map((condition, index) => (
+                <tr key={index}>
+                  <td>{condition.type}</td>
+                  <td>
+                    <StatusBadge
+                      status={condition.status === "True" ? "Ready" : "Warning"}
+                    />
+                  </td>
+                  <td>{condition.reason}</td>
+                  <td>{condition.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="card">
@@ -75,36 +134,26 @@ function DeploymentDetails() {
 
         <p>
           <strong>Severity:</strong>{" "}
-          <span
-            style={{
-              background:
-                severityColor[data.analysis.severity] || "#6b7280",
-              color: "white",
-              padding: "6px 14px",
-              borderRadius: "20px",
-              fontWeight: "bold",
-            }}
-          >
-            {data.analysis.severity}
-          </span>
+          <StatusBadge status={deployment.analysis?.severity || "Low"} />
         </p>
 
         <p>
-          <strong>Root Cause:</strong>{" "}
-          {data.analysis.root_cause}
+          <strong>Root Cause:</strong>
+          <br />
+          {deployment.analysis?.root_cause || "No issues detected."}
         </p>
 
         <p>
-          <strong>Recommendation:</strong>{" "}
-          {data.analysis.recommendation}
+          <strong>Recommendation:</strong>
+          <br />
+          {deployment.analysis?.recommendation || "No action required."}
         </p>
 
         <p>
           <strong>Owner:</strong>{" "}
-          {data.analysis.owner}
+          {deployment.analysis?.owner || "Platform Engineering"}
         </p>
       </div>
-
     </div>
   );
 }

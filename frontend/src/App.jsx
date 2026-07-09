@@ -11,6 +11,7 @@ import DeploymentDetails from "./pages/DeploymentDetails.jsx";
 import Nodes from "./pages/Nodes.jsx";
 import NodeDetails from "./pages/NodeDetails.jsx";
 import Namespaces from "./pages/Namespaces.jsx";
+import NamespaceDetails from "./pages/NamespaceDetails.jsx";
 import AISummary from "./pages/AISummary.jsx";
 
 function App() {
@@ -34,6 +35,11 @@ function App() {
         <Route path="/nodes/:nodeName" element={<NodeDetails />} />
 
         <Route path="/namespaces" element={<Namespaces />} />
+        <Route
+          path="/namespaces/:namespaceName"
+          element={<NamespaceDetails />}
+        />
+
         <Route path="/ai-summary" element={<AISummary />} />
       </Routes>
     </BrowserRouter>
