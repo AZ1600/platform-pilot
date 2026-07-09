@@ -35,3 +35,9 @@ export async function getClusterSummary() {
   if (!res.ok) throw new Error("Failed to fetch cluster summary");
   return res.json();
 }
+
+export async function getNodes() {
+  const res = await fetch(`${API}/nodes`);
+  if (!res.ok) throw new Error("Failed to fetch nodes");
+  return res.json();
+}

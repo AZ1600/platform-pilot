@@ -6,6 +6,8 @@ from kubernetes_client import (
     get_pod_events,
     get_pod_logs,
     list_deployments,
+    list_nodes,
+    get_node_details,
 )
 from ai import analyze_pod
 
@@ -13,7 +15,12 @@ app = FastAPI(title="PlatformPilot API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +45,16 @@ def pods():
 @app.get("/deployments")
 def deployments():
     return list_deployments()
+
+
+@app.get("/nodes")
+def nodes():
+    return list_nodes()
+
+
+@app.get("/nodes/{node_name}")
+def node_details(node_name: str):
+    return get_node_details(node_name)
 
 
 @app.get("/events/{pod_name}")
@@ -114,6 +131,7 @@ def pod_analysis(pod_name: str):
         "analysis": recommendation,
     }
 
+
 @app.get("/cluster-summary")
 def cluster_summary():
     pods = list_pods()
@@ -131,10 +149,8 @@ def cluster_summary():
     degraded_deployments = len(deployments) - healthy_deployments
 
     health_score = 100
-
     health_score -= failed_pods * 15
     health_score -= degraded_deployments * 20
-
     health_score = max(0, health_score)
 
     summary = (
@@ -148,22 +164,14 @@ def cluster_summary():
     if failed_pods == 0:
         recommendations.append("No pod failures detected.")
     else:
-        recommendations.append(
-            "Investigate non-running pods."
-        )
+        recommendations.append("Investigate non-running pods.")
 
     if degraded_deployments == 0:
-        recommendations.append(
-            "All deployments are healthy."
-        )
+        recommendations.append("All deployments are healthy.")
     else:
-        recommendations.append(
-            "Review degraded deployments."
-        )
+        recommendations.append("Review degraded deployments.")
 
-    recommendations.append(
-        "Continue monitoring cluster health."
-    )
+    recommendations.append("Continue monitoring cluster health.")
 
     return {
         "health_score": health_score,
@@ -174,6 +182,7 @@ def cluster_summary():
         "summary": summary,
         "recommendations": recommendations,
     }
+
 
 @app.get("/dashboard")
 def dashboard():
