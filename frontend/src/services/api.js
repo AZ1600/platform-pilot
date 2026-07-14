@@ -54,3 +54,63 @@ export async function getPodLogs(name) {
   const response = await fetch(`${API_URL}/logs/${name}`);
   return response.json();
 }
+
+export async function getPrometheusHealth() {
+  const response = await fetch(
+    "http://127.0.0.1:8000/metrics/health"
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load Prometheus health.");
+  }
+
+  return response.json();
+}
+
+export async function getPrometheusPodMetrics() {
+  const response = await fetch(
+    "http://127.0.0.1:8000/metrics/pods"
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load Prometheus pod metrics.");
+  }
+
+  return response.json();
+}
+
+export async function getPrometheusClusterMetrics() {
+  const response = await fetch(
+    "http://127.0.0.1:8000/metrics/cluster"
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load Prometheus cluster metrics.");
+  }
+
+  return response.json();
+}
+
+export async function getPrometheusNamespaceMetrics() {
+  const response = await fetch(
+    "http://127.0.0.1:8000/metrics/pods/namespaces"
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load namespace metrics.");
+  }
+
+  return response.json();
+}
+
+export async function getAiSummary() {
+  const response = await fetch(
+    "http://127.0.0.1:8000/ai/summary"
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load AI cluster summary.");
+  }
+
+  return response.json();
+}

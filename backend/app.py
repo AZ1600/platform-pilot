@@ -1,23 +1,33 @@
+from routers.ai import router as ai_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from ai import analyze_pod
 from kubernetes_client import (
-    list_pods,
-    list_all_pods,
+    get_deployment_details,
+    get_namespace_details,
+    get_node_details,
     get_pod_events,
     get_pod_logs,
-    list_deployments,
     list_all_deployments,
-    get_deployment_details,
-    list_nodes,
-    get_node_details,
+    list_all_pods,
+    list_deployments,
     list_namespaces,
-    get_namespace_details,
+    list_nodes,
+    list_pods,
     list_recent_events,
 )
-from ai import analyze_pod
+from routers.metrics import router as metrics_router
 
-app = FastAPI(title="PlatformPilot API")
+
+app = FastAPI(
+    title="PlatformPilot API",
+    version="2.0.0",
+    description=(
+        "AI-assisted Kubernetes operations and observability API."
+    ),
+)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,14 +43,40 @@ app.add_middleware(
 )
 
 
+# Register the Prometheus metrics routes.
+#
+# This adds:
+# GET /metrics/health
+# GET /metrics/pods
+# GET /metrics/pods/namespaces
+app.include_router(metrics_router)
+app.include_router(ai_router)
+
+
 @app.get("/")
 def root():
-    return {"message": "🚀 PlatformPilot API"}
+    return {
+        "message": "🚀 PlatformPilot API",
+        "version": "2.0.0",
+    }
 
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    """
+    Check whether the PlatformPilot FastAPI application is running.
+
+    This endpoint checks the application itself.
+
+    Prometheus health is checked separately through:
+    GET /metrics/health
+    """
+
+    return {
+        "status": "healthy",
+        "service": "platformpilot-api",
+        "version": "2.0.0",
+    }
 
 
 @app.get("/pods")
@@ -101,7 +137,13 @@ def risks():
     for pod in pods:
         if pod["status"] != "Running":
             analysis = analyze_pod(pod)
-            results.append({**pod, **analysis})
+
+            results.append(
+                {
+                    **pod,
+                    **analysis,
+                }
+            )
 
     return {
         "total_pods": len(pods),
@@ -141,10 +183,19 @@ def analysis():
 def pod_analysis(pod_name: str):
     pods = list_pods()
 
-    pod = next((p for p in pods if p["name"] == pod_name), None)
+    pod = next(
+        (
+            pod
+            for pod in pods
+            if pod["name"] == pod_name
+        ),
+        None,
+    )
 
     if not pod:
-        return {"error": "Pod not found"}
+        return {
+            "error": "Pod not found",
+        }
 
     events = get_pod_events(pod_name)
     logs = get_pod_logs(pod_name)
@@ -166,21 +217,39 @@ def cluster_summary():
     namespaces = list_namespaces()
     events = list_recent_events()
 
-    running_pods = sum(1 for p in pods if p["status"] == "Running")
+    running_pods = sum(
+        1
+        for pod in pods
+        if pod["status"] == "Running"
+    )
+
     failed_pods = len(pods) - running_pods
 
     healthy_deployments = sum(
         1
-        for d in deployments
-        if d["replicas"] == d["ready"] == d["available"]
+        for deployment in deployments
+        if deployment["replicas"]
+        == deployment["ready"]
+        == deployment["available"]
     )
 
-    degraded_deployments = len(deployments) - healthy_deployments
+    degraded_deployments = (
+        len(deployments) - healthy_deployments
+    )
 
-    ready_nodes = sum(1 for n in nodes if n["status"] == "Ready")
+    ready_nodes = sum(
+        1
+        for node in nodes
+        if node["status"] == "Ready"
+    )
+
     unhealthy_nodes = len(nodes) - ready_nodes
 
-    active_namespaces = sum(1 for n in namespaces if n["status"] == "Active")
+    active_namespaces = sum(
+        1
+        for namespace in namespaces
+        if namespace["status"] == "Active"
+    )
 
     incidents = []
 
@@ -193,16 +262,21 @@ def cluster_summary():
                     "namespace": pod["namespace"],
                     "status": pod["status"],
                     "severity": "High",
-                    "message": f"Pod {pod['name']} is {pod['status']}",
+                    "message": (
+                        f"Pod {pod['name']} is "
+                        f"{pod['status']}"
+                    ),
                 }
             )
 
     for deployment in deployments:
-        if not (
+        deployment_is_healthy = (
             deployment["replicas"]
             == deployment["ready"]
             == deployment["available"]
-        ):
+        )
+
+        if not deployment_is_healthy:
             incidents.append(
                 {
                     "type": "Deployment",
@@ -211,7 +285,8 @@ def cluster_summary():
                     "status": "Degraded",
                     "severity": "High",
                     "message": (
-                        f"Deployment {deployment['name']} does not have all replicas ready"
+                        f"Deployment {deployment['name']} "
+                        "does not have all replicas ready."
                     ),
                 }
             )
@@ -222,30 +297,45 @@ def cluster_summary():
     health_score -= unhealthy_nodes * 25
     health_score = max(0, health_score)
 
-    summary = (
-        "Cluster is healthy."
-        if health_score >= 90
-        else "Cluster requires attention."
-    )
+    if health_score >= 90:
+        summary = "Cluster is healthy."
+    elif health_score >= 70:
+        summary = "Cluster health is degraded."
+    else:
+        summary = "Cluster requires immediate attention."
 
     recommendations = []
 
     if failed_pods == 0:
-        recommendations.append("No pod failures detected.")
+        recommendations.append(
+            "No pod failures detected."
+        )
     else:
-        recommendations.append("Investigate non-running pods.")
+        recommendations.append(
+            "Investigate non-running pods."
+        )
 
     if degraded_deployments == 0:
-        recommendations.append("All deployments are healthy.")
+        recommendations.append(
+            "All deployments are healthy."
+        )
     else:
-        recommendations.append("Review degraded deployments.")
+        recommendations.append(
+            "Review degraded deployments."
+        )
 
     if unhealthy_nodes == 0:
-        recommendations.append("All nodes are Ready.")
+        recommendations.append(
+            "All nodes are Ready."
+        )
     else:
-        recommendations.append("Investigate unhealthy nodes.")
+        recommendations.append(
+            "Investigate unhealthy nodes."
+        )
 
-    recommendations.append("Continue monitoring cluster health.")
+    recommendations.append(
+        "Continue monitoring cluster health."
+    )
 
     return {
         "health_score": health_score,
@@ -288,13 +378,21 @@ def dashboard():
                 {
                     **pod,
                     **analyze_pod(pod),
-                    "events": get_pod_events(pod["name"]),
-                    "logs": get_pod_logs(pod["name"]),
+                    "events": get_pod_events(
+                        pod["name"]
+                    ),
+                    "logs": get_pod_logs(
+                        pod["name"]
+                    ),
                 }
             )
 
     return {
-        "cluster_status": "Healthy" if len(incidents) == 0 else "Warning",
+        "cluster_status": (
+            "Healthy"
+            if len(incidents) == 0
+            else "Warning"
+        ),
         "pods": len(pods),
         "deployments": len(deployments),
         "active_risks": len(incidents),
