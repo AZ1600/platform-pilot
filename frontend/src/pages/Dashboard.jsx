@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import {
   Area,
   AreaChart,
@@ -72,6 +73,7 @@ function Dashboard() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -142,6 +144,105 @@ function Dashboard() {
       setRefreshing(false);
     }
   }, []);
+
+
+  const exportDashboardReport = async () => {
+  const dashboardElement = document.getElementById(
+    "platformpilot-dashboard-report"
+  );
+
+  if (!dashboardElement) {
+    setError("PlatformPilot could not find the dashboard report.");
+    return;
+  }
+
+  try {
+    setExporting(true);
+    setError(null);
+
+    const canvas = await html2canvas(dashboardElement, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#0f111a",
+      logging: false,
+      windowWidth: dashboardElement.scrollWidth,
+      windowHeight: dashboardElement.scrollHeight,
+    });
+
+    const imageData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const margin = 10;
+    const availableWidth = pageWidth - margin * 2;
+    const availableHeight = pageHeight - margin * 2;
+
+    const imageHeight =
+      (canvas.height * availableWidth) / canvas.width;
+
+    let remainingHeight = imageHeight;
+    let imagePosition = margin;
+
+    pdf.setFillColor(15, 17, 26);
+    pdf.rect(0, 0, pageWidth, pageHeight, "F");
+
+    pdf.addImage(
+      imageData,
+      "PNG",
+      margin,
+      imagePosition,
+      availableWidth,
+      imageHeight
+    );
+
+    remainingHeight -= availableHeight;
+
+    while (remainingHeight > 0) {
+      pdf.addPage();
+
+      pdf.setFillColor(15, 17, 26);
+      pdf.rect(0, 0, pageWidth, pageHeight, "F");
+
+      imagePosition =
+        margin - (imageHeight - remainingHeight);
+
+      pdf.addImage(
+        imageData,
+        "PNG",
+        margin,
+        imagePosition,
+        availableWidth,
+        imageHeight
+      );
+
+      remainingHeight -= availableHeight;
+    }
+
+    const timestamp = new Date()
+      .toISOString()
+      .replaceAll(":", "-")
+      .replaceAll(".", "-");
+
+    pdf.save(
+      `platformpilot-cluster-report-${timestamp}.pdf`
+    );
+  } catch (err) {
+    console.error("PDF export error:", err);
+
+    setError(
+      "PlatformPilot could not export the dashboard report."
+    );
+  } finally {
+    setExporting(false);
+  }
+};
 
 
   useEffect(() => {
@@ -260,8 +361,11 @@ function Dashboard() {
 
 
   return (
-    <div className="page">
-      <section className="hero-card dashboard-hero">
+  <div
+    className="page"
+    id="platformpilot-dashboard-report"
+  >
+    <section className="hero-card dashboard-hero">
         <div>
           <h1>📊 Dashboard</h1>
 
@@ -271,21 +375,36 @@ function Dashboard() {
         </div>
 
         <div className="dashboard-actions">
-          <button
-            className="refresh-button"
-            type="button"
-            disabled={refreshing}
-            onClick={() => loadDashboard(true)}
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
 
-          {lastUpdated && (
-            <small>
-              Updated {lastUpdated.toLocaleTimeString()}
-            </small>
-          )}
-        </div>
+  <div className="dashboard-action-buttons">
+
+    <button
+      className="export-button"
+      type="button"
+      disabled={exporting}
+      onClick={exportDashboardReport}
+    >
+      {exporting ? "Exporting..." : "Export PDF"}
+    </button>
+
+    <button
+      className="refresh-button"
+      type="button"
+      disabled={refreshing}
+      onClick={() => loadDashboard(true)}
+    >
+      {refreshing ? "Refreshing..." : "Refresh"}
+    </button>
+
+  </div>
+
+  {lastUpdated && (
+    <small>
+      Updated {lastUpdated.toLocaleTimeString()}
+    </small>
+  )}
+
+</div>
       </section>
 
 
@@ -564,177 +683,239 @@ function Dashboard() {
         </div>
       </article>
 
-<div className="bottom-grid">
-  
-      <article className="card">
-        <h2>🖥️ Node Observability</h2>
 
-        {!metrics?.nodes?.items?.length ? (
-          <p>No Prometheus node information available.</p>
-        ) : (
-          <div className="node-observability-list">
-            {metrics.nodes.items.map((node) => (
-              <div
-                className="node-observability-item"
-                key={node.node}
-              >
-                <div className="node-identity">
-                  <h3>{node.node}</h3>
-
-                  <span
-                    className={
-                      node.ready
-                        ? "monitoring-status healthy"
-                        : "monitoring-status degraded"
-                    }
-                  >
-                    ● {node.status}
-                  </span>
-                </div>
-
-                <div className="node-progress-block">
-                  <div className="node-progress-heading">
-                    <span>CPU</span>
-                    <strong>{averageCpu}%</strong>
-                  </div>
-
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill cpu-progress"
-                      style={{
-                        width: `${Math.min(averageCpu, 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="node-progress-block">
-                  <div className="node-progress-heading">
-                    <span>Memory</span>
-                    <strong>{averageMemory}%</strong>
-                  </div>
-
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill memory-progress"
-                      style={{
-                        width: `${Math.min(
-                          averageMemory,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </article>
-
-
-      {aiSummary && (
-  <article className="card ai-insights-card">
-    <div className="ai-insights-header">
-      <div>
-        <h2>🤖 AI Operations Summary</h2>
-
-        <p>
-          {aiSummary.summary ||
-            "PlatformPilot is analysing the cluster."}
-        </p>
-      </div>
-
-      <div
-        className={`ai-health-score ${
-          aiSummary.status || "unknown"
-        }`}
-      >
-        <span>Health Score</span>
-        <strong>{aiSummary.health_score ?? 0}/100</strong>
-      </div>
+           <div className="bottom-grid">
+        <article className="card node-summary-card">
+  <div className="node-summary-header">
+    <div>
+      <h2>🖥️ Node Observability</h2>
+      <p>Live health and resource usage for cluster nodes.</p>
     </div>
 
-    <div className="ai-insights-grid">
-      <section>
-        <h3>Findings</h3>
+    <span
+      className={
+        metrics?.nodes?.items?.every((node) => node.ready)
+          ? "monitoring-status healthy"
+          : "monitoring-status degraded"
+      }
+    >
+      ●{" "}
+      {metrics?.nodes?.items?.every((node) => node.ready)
+        ? "All Nodes Ready"
+        : "Node Attention Required"}
+    </span>
+  </div>
 
-        <ul className="insight-list">
-          {(aiSummary.findings || []).map((item, index) => (
-            <li key={`${item}-${index}`}>
-              <span>●</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h3>Recommendations</h3>
-
-        <ul className="insight-list recommendations-list">
-          {(aiSummary.recommendations || []).map(
-            (item, index) => (
-              <li key={`${item}-${index}`}>
-                <span>→</span>
-                {item}
-              </li>
-            )
-          )}
-        </ul>
-      </section>
-    </div>
-
-    <div className="score-breakdown">
-      <h3>Score Breakdown</h3>
-
-      {(aiSummary.score_breakdown || []).map((item) => (
+  {!metrics?.nodes?.items?.length ? (
+    <p>No Prometheus node information available.</p>
+  ) : (
+    <div className="node-summary-list">
+      {metrics.nodes.items.map((node) => (
         <div
-          className="score-breakdown-row"
-          key={item.category}
+          className="node-summary-item"
+          key={node.node}
         >
-          <div>
-            <strong>{item.category}</strong>
-            <p>{item.reason}</p>
+          <div className="node-summary-identity">
+            <div>
+              <h3>{node.node}</h3>
+              <p>Kubernetes worker/control-plane node</p>
+            </div>
+
+            <span
+              className={
+                node.ready
+                  ? "monitoring-status healthy"
+                  : "monitoring-status degraded"
+              }
+            >
+              ● {node.status}
+            </span>
           </div>
 
-          <span
-            className={
-              item.change < 0
-                ? "score-negative"
-                : "score-neutral"
-            }
-          >
-            {item.change > 0 ? "+" : ""}
-            {item.change}
-          </span>
+          <div className="node-kpi-grid">
+            <div className="node-kpi">
+              <span>CPU Usage</span>
+              <strong>{averageCpu}%</strong>
+            </div>
+
+            <div className="node-kpi">
+              <span>Memory Usage</span>
+              <strong>{averageMemory}%</strong>
+            </div>
+
+            <div className="node-kpi">
+              <span>Running Pods</span>
+              <strong>{runningPods}</strong>
+            </div>
+
+            <div className="node-kpi">
+              <span>Prometheus</span>
+              <strong>
+                {metrics?.prometheus?.healthy_targets ?? 0}/
+                {metrics?.prometheus?.total_targets ?? 0}
+              </strong>
+            </div>
+          </div>
+
+          <div className="node-progress-section">
+            <div className="node-progress-block">
+              <div className="node-progress-heading">
+                <span>CPU</span>
+                <strong>{averageCpu}%</strong>
+              </div>
+
+              <div className="progress-track">
+                <div
+                  className="progress-fill cpu-progress"
+                  style={{
+                    width: `${Math.min(averageCpu, 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="node-progress-block">
+              <div className="node-progress-heading">
+                <span>Memory</span>
+                <strong>{averageMemory}%</strong>
+              </div>
+
+              <div className="progress-track">
+                <div
+                  className="progress-fill memory-progress"
+                  style={{
+                    width: `${Math.min(
+                      averageMemory,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       ))}
     </div>
+  )}
+</article>
 
-    {(aiSummary.incidents || []).length > 0 && (
-      <div className="ai-incidents">
-        <h3>Detected Incidents</h3>
+        {aiSummary ? (
+          <article className="card ai-insights-card">
+            <div className="ai-insights-header">
+              <div>
+                <h2>🤖 AI Operations Summary</h2>
 
-        {aiSummary.incidents.map((incident, index) => (
-          <div
-            className={`ai-incident ${incident.severity}`}
-            key={`${incident.title}-${index}`}
-          >
-            <div>
-              <strong>{incident.title}</strong>
-              <p>{incident.message}</p>
+                <p>
+                  {aiSummary.summary ||
+                    "PlatformPilot is analysing the cluster."}
+                </p>
+              </div>
+
+              <div
+                className={`ai-health-score ${
+                  aiSummary.status || "unknown"
+                }`}
+              >
+                <span>Health Score</span>
+
+                <strong>
+                  {aiSummary.health_score ?? 0}/100
+                </strong>
+              </div>
             </div>
 
-            <span>{incident.severity}</span>
-          </div>
-        ))}
-      </div>
-    )}
-  </article>
-)}
+            <div className="ai-insights-grid">
+              <section>
+                <h3>Findings</h3>
 
-</div>
+                <ul className="insight-list">
+                  {(aiSummary.findings || []).map(
+                    (item, index) => (
+                      <li key={`${item}-${index}`}>
+                        <span>●</span>
+                        {item}
+                      </li>
+                    )
+                  )}
+                </ul>
+              </section>
+
+              <section>
+                <h3>Recommendations</h3>
+
+                <ul className="insight-list recommendations-list">
+                  {(aiSummary.recommendations || []).map(
+                    (item, index) => (
+                      <li key={`${item}-${index}`}>
+                        <span>→</span>
+                        {item}
+                      </li>
+                    )
+                  )}
+                </ul>
+              </section>
+            </div>
+
+            <div className="score-breakdown">
+              <h3>Score Breakdown</h3>
+
+              {(aiSummary.score_breakdown || []).map(
+                (item) => (
+                  <div
+                    className="score-breakdown-row"
+                    key={item.category}
+                  >
+                    <div>
+                      <strong>{item.category}</strong>
+                      <p>{item.reason}</p>
+                    </div>
+
+                    <span
+                      className={
+                        item.change < 0
+                          ? "score-negative"
+                          : "score-neutral"
+                      }
+                    >
+                      {item.change > 0 ? "+" : ""}
+                      {item.change}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+
+            {(aiSummary.incidents || []).length > 0 && (
+              <div className="ai-incidents">
+                <h3>Detected Incidents</h3>
+
+                {aiSummary.incidents.map(
+                  (incident, index) => (
+                    <div
+                      className={`ai-incident ${
+                        incident.severity
+                      }`}
+                      key={`${incident.title}-${index}`}
+                    >
+                      <div>
+                        <strong>{incident.title}</strong>
+                        <p>{incident.message}</p>
+                      </div>
+
+                      <span>{incident.severity}</span>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+          </article>
+        ) : (
+          <article className="card ai-insights-card">
+            <h2>🤖 AI Operations Summary</h2>
+            <p>Loading AI cluster analysis...</p>
+          </article>
+        )}
+      </div>
 
 
 
