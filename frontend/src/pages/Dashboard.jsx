@@ -366,13 +366,47 @@ function Dashboard() {
     id="platformpilot-dashboard-report"
   >
     <section className="hero-card dashboard-hero">
-        <div>
-          <h1>📊 Dashboard</h1>
+        <div className="hero-content">
 
-          <p>
-            Live Kubernetes and Prometheus cluster overview
-          </p>
-        </div>
+  <span className="hero-badge">
+    🚀 PLATFORMPILOT
+  </span>
+
+  <h1>
+    Enterprise Kubernetes
+    <br />
+    Observability Platform
+  </h1>
+
+  <p>
+    Real-time monitoring, AI-powered insights,
+    Prometheus metrics and Kubernetes health
+    analytics.
+  </p>
+<div className="hero-metrics">
+
+  <div>
+    <span>Health</span>
+    <strong>{summary.health_score}/100</strong>
+  </div>
+
+  <div>
+    <span>CPU</span>
+    <strong>{averageCpu}%</strong>
+  </div>
+
+  <div>
+    <span>Memory</span>
+    <strong>{averageMemory}%</strong>
+  </div>
+
+  <div>
+    <span>Pods</span>
+    <strong>{runningPods}</strong>
+  </div>
+
+</div>
+</div>
 
         <div className="dashboard-actions">
 
@@ -409,13 +443,16 @@ function Dashboard() {
 
 
       {error && (
-        <div className="dashboard-warning">
-          <strong>Monitoring warning:</strong> {error}
-        </div>
-      )}
+  <div className="dashboard-warning">
+    <strong>Monitoring warning:</strong> {error}
+  </div>
+)}
 
+<h2 className="dashboard-section-title">
+  Cluster Health
+</h2>
 
-      <div className="section-heading">
+<div className="section-heading">
         <div>
           <h2>☸️ Kubernetes Overview</h2>
           <p>Current cluster resources and health.</p>
@@ -465,7 +502,9 @@ function Dashboard() {
         </div>
       </div>
 
-
+<h2 className="dashboard-section-title">
+  Live Monitoring
+</h2>
       <div className="section-heading">
         <div>
           <h2>🔥 Prometheus Observability</h2>
@@ -539,7 +578,9 @@ function Dashboard() {
         </div>
       </div>
 
-
+<h2 className="dashboard-section-title">
+  Performance Analytics
+</h2>
       <div className="charts-grid">
         <article className="card chart-card">
           <div className="chart-heading">
@@ -683,7 +724,9 @@ function Dashboard() {
         </div>
       </article>
 
-
+<h2 className="dashboard-section-title">
+  Operations Center
+</h2>
            <div className="bottom-grid">
         <article className="card node-summary-card">
   <div className="node-summary-header">
@@ -918,7 +961,9 @@ function Dashboard() {
       </div>
 
 
-
+<h2 className="dashboard-section-title">
+  Incident Center
+</h2>
       <article className="card">
         <h2>🚨 Active Incidents</h2>
 

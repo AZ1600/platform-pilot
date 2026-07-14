@@ -114,3 +114,23 @@ export async function getAiSummary() {
 
   return response.json();
 }
+
+export async function getGlobalSearchData() {
+  const [pods, deployments, nodes, namespaces] = await Promise.all([
+    getPods(),
+    getDeployments(),
+    getNodes(),
+    getNamespaces(),
+  ]);
+
+  return {
+    pods: Array.isArray(pods) ? pods : pods?.items || [],
+    deployments: Array.isArray(deployments)
+      ? deployments
+      : deployments?.items || [],
+    nodes: Array.isArray(nodes) ? nodes : nodes?.items || [],
+    namespaces: Array.isArray(namespaces)
+      ? namespaces
+      : namespaces?.items || [],
+  };
+}

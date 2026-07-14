@@ -80,13 +80,13 @@ def health():
 
 
 @app.get("/pods")
-def pods():
-    return list_pods()
+def get_pods():
+    return list_all_pods()
 
 
 @app.get("/deployments")
-def deployments():
-    return list_deployments()
+def get_deployments():
+    return list_all_deployments()
 
 
 @app.get("/deployments/{deployment_name}")

@@ -151,12 +151,21 @@ def list_all_deployments():
     results = []
 
     for deployment in deployments.items:
+        replicas = deployment.spec.replicas or 0
+        ready = deployment.status.ready_replicas or 0
+        available = deployment.status.available_replicas or 0
+
         results.append({
             "name": deployment.metadata.name,
             "namespace": deployment.metadata.namespace,
-            "replicas": deployment.spec.replicas,
-            "ready": deployment.status.ready_replicas or 0,
-            "available": deployment.status.available_replicas or 0,
+            "replicas": replicas,
+            "ready": ready,
+            "available": available,
+            "status": (
+                "Available"
+                if replicas == ready == available
+                else "Degraded"
+            ),
         })
 
     return results
