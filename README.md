@@ -4,8 +4,12 @@
 
 PlatformPilot combines Kubernetes APIs, Prometheus metrics, and AI-powered operational insights into a modern dashboard designed for Platform Engineers, DevOps Engineers, and Site Reliability Engineers.
 
+---
+
+## 🎥 Demo
+
 <p align="center">
-  <img src="screenshots/dashboard-overview.png" alt="PlatformPilot Dashboard"/>
+  <img src="screenshots/platformpilot-demo.gif" alt="PlatformPilot Demo" width="100%">
 </p>
 
 ---
@@ -20,145 +24,94 @@ PlatformPilot combines Kubernetes APIs, Prometheus metrics, and AI-powered opera
 
 # 📖 Overview
 
-PlatformPilot is an AI-assisted Kubernetes operations dashboard built with **React**, **FastAPI**, and the **Kubernetes Python Client**.
+PlatformPilot is a modern Kubernetes observability platform that provides real-time visibility into cluster resources, infrastructure health, workloads, and performance metrics.
 
-The platform provides real-time visibility into Kubernetes workloads, cluster infrastructure, performance metrics, and operational health while using AI-powered analysis to help engineers identify issues faster and make informed operational decisions.
-
----
-
-# ✨ Highlights
-
-- 🚀 Enterprise Kubernetes Observability Dashboard
-- 🤖 AI-assisted Operations Summary
-- 📊 Live Prometheus Monitoring
-- 🔍 Global Search Across Kubernetes Resources
-- ⌨️ Keyboard-driven Command Palette (Ctrl+K / ⌘K)
-- 🚨 Incident Detection & Health Scoring
-- 📄 PDF Report Export
-- ⚡ Auto Refresh
+Built with **React**, **FastAPI**, and the **Kubernetes Python Client**, the platform combines operational dashboards with AI-powered insights to help engineers detect issues, investigate workloads, and make faster operational decisions.
 
 ---
 
-# ✨ Features
+# ✨ Key Features
 
-## 📊 Cluster Observability
+### 📊 Cluster Observability
 
-- Overall Cluster Health Score
-- Live Monitoring Dashboard
-- Real-time Kubernetes Metrics
-- Prometheus Health Monitoring
-- Manual & Automatic Refresh
-- Export Dashboard as PDF
+- Kubernetes Health Dashboard
+- Live Cluster Monitoring
+- Health Scoring
+- Prometheus Metrics
+- Performance Analytics
+- Manual & Auto Refresh
+- PDF Report Export
 
----
-
-## 🤖 AI Operations
+### 🤖 AI Operations
 
 - AI Operations Summary
-- Cluster Health Analysis
-- Operational Recommendations
 - Root Cause Analysis
+- Cluster Health Assessment
 - Severity Classification
+- Operational Recommendations
 - Incident Detection
 
----
+### 🔍 Productivity
 
-## 📈 Performance Analytics
-
-- CPU & Memory Trends
-- Pod Status Distribution
-- Namespace Workload Analytics
-- Resource Utilization
-- Prometheus Metrics
-
----
-
-## 🔍 Productivity
-
-- Global Resource Search
+- Global Kubernetes Search
 - Command Palette (Ctrl+K / ⌘K)
 - Keyboard Navigation
-- Fast Resource Discovery
+- Instant Resource Discovery
 - Search Pods, Deployments, Nodes & Namespaces
+
+### 📈 Infrastructure Monitoring
+
+- Pods
+- Deployments
+- Nodes
+- Namespaces
+- Live Kubernetes Events
+- Container Logs
+- Resource Health Monitoring
 
 ---
 
 # 🏗 Architecture
 
 ```text
-                 React Frontend
-                        │
-                        ▼
-                 FastAPI Backend
-                        │
-        ┌───────────────┴───────────────┐
-        ▼                               ▼
- Kubernetes Python Client        Prometheus Metrics
-        │                               │
-        └───────────────┬───────────────┘
-                        ▼
-                Kubernetes Cluster
+                    React + Vite
+                          │
+                          ▼
+                    FastAPI Backend
+                REST API Endpoints
+                          │
+        ┌─────────────────┴─────────────────┐
+        ▼                                   ▼
+ Kubernetes Python Client         Prometheus HTTP API
+        │                                   │
+        └─────────────────┬─────────────────┘
+                          ▼
+                  Kubernetes Cluster
 ```
+
+For a detailed architecture walkthrough, see **docs/ARCHITECTURE.md**.
 
 ---
 
 # 🛠 Technology Stack
 
-## Frontend
-
-- React 19
-- React Router
-- Vite
-- CSS3
-
-## Backend
-
-- FastAPI
-- Python 3.12
-- Kubernetes Python Client
-- Uvicorn
-
-## Infrastructure
-
-- Kubernetes
-- Prometheus
-- Docker Desktop
-- kubectl
-
----
-
-# 📂 Project Structure
-
-```text
-platform-pilot/
-│
-├── backend/
-├── frontend/
-├── infrastructure/
-├── screenshots/
-│   ├── dashboard-overview.png
-│   ├── global-search.png
-│   ├── command-palette.png
-│   ├── performance-analytics.png
-│   ├── ai-operations-summary.png
-│   └── incident-center.png
-│
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-└── .gitignore
-```
+| Layer | Technology |
+|--------|------------|
+| Frontend | React 19, React Router, Vite, CSS3 |
+| Backend | FastAPI, Python 3.12, Uvicorn |
+| Kubernetes | Kubernetes Python Client |
+| Monitoring | Prometheus |
+| Infrastructure | Docker Desktop Kubernetes, kubectl |
 
 ---
 
 # 📸 Screenshots
 
-## 🚀 Dashboard Overview
+## 📊 Dashboard Overview
 
-The main dashboard provides a centralized view of cluster health, live monitoring, AI insights, and operational metrics.
+The central dashboard provides cluster health, workload statistics, AI insights, and live monitoring.
 
-![Dashboard Overview](screenshots/dashboard-overview.png)
+![Dashboard](screenshots/dashboard-overview.png)
 
 ---
 
@@ -172,7 +125,7 @@ Search Kubernetes resources instantly across Pods, Deployments, Nodes, and Names
 
 ## ⌨️ Command Palette
 
-Quickly navigate the platform using the keyboard-driven Command Palette (**Ctrl+K / ⌘K**).
+Navigate the platform using keyboard shortcuts with **Ctrl+K / ⌘K**.
 
 ![Command Palette](screenshots/command-palette.png)
 
@@ -180,7 +133,7 @@ Quickly navigate the platform using the keyboard-driven Command Palette (**Ctrl+
 
 ## 📈 Performance Analytics
 
-Visualize CPU usage, memory consumption, pod status, and namespace workload distribution through real-time charts.
+Monitor CPU, memory, pod distribution, and namespace utilization using Prometheus-powered analytics.
 
 ![Performance Analytics](screenshots/performance-analytics.png)
 
@@ -188,7 +141,7 @@ Visualize CPU usage, memory consumption, pod status, and namespace workload dist
 
 ## 🤖 AI Operations Summary
 
-Receive AI-generated operational insights, health scoring, findings, and recommended actions.
+Receive AI-generated operational insights, health analysis, findings, and recommended actions.
 
 ![AI Operations Summary](screenshots/ai-operations-summary.png)
 
@@ -196,17 +149,39 @@ Receive AI-generated operational insights, health scoring, findings, and recomme
 
 ## 🚨 Incident Center
 
-Track cluster incidents, operational alerts, and active health issues from a centralized dashboard.
+Track operational alerts and cluster incidents from a centralized dashboard.
 
 ![Incident Center](screenshots/incident-center.png)
 
 ---
 
-# 🌟 PlatformPilot Project Overview
+# 🌟 Project Overview
 
-This infographic summarizes PlatformPilot's architecture, roadmap, repository highlights, and upcoming features.
+This infographic summarizes PlatformPilot's architecture, roadmap, repository highlights, and future vision.
 
 ![PlatformPilot Overview](screenshots/platformpilot-overview.png)
+
+---
+
+# 📂 Project Structure
+
+```text
+platform-pilot/
+│
+├── backend/
+├── frontend/
+├── infrastructure/
+├── screenshots/
+├── docs/
+│   └── ARCHITECTURE.md
+│
+├── CHANGELOG.md
+├── ROADMAP.md
+├── CONTRIBUTING.md
+├── LICENSE
+└── README.md
+```
+
 ---
 
 # 🚀 Getting Started
@@ -221,14 +196,14 @@ cd platform-pilot
 
 ---
 
-## Backend Setup
+## Backend
 
 ```bash
 cd backend
 
 python -m venv venv
 
-# Linux / macOS
+# macOS / Linux
 source venv/bin/activate
 
 # Windows
@@ -247,7 +222,7 @@ http://localhost:8000
 
 ---
 
-## Frontend Setup
+## Frontend
 
 ```bash
 cd frontend
@@ -265,27 +240,25 @@ http://localhost:5173
 
 ---
 
-# 📈 Roadmap
+# 🗺 Roadmap
 
 ## ✅ Completed
 
-- Enterprise Dashboard
+- Kubernetes Dashboard
 - AI Operations Summary
-- Performance Analytics
-- Prometheus Integration
 - Global Search
 - Command Palette
+- Performance Analytics
+- Prometheus Integration
 - Incident Center
 - PDF Export
 - Auto Refresh
 - Responsive UI
 
----
-
-## 🚀 Planned
+### 🚀 Coming Next
 
 - Authentication
-- Role-Based Access Control (RBAC)
+- RBAC
 - Multi-cluster Support
 - Historical Metrics
 - WebSocket Live Updates
@@ -293,26 +266,28 @@ http://localhost:5173
 - Helm Monitoring
 - LLM-powered Root Cause Analysis
 
+See **ROADMAP.md** for more details.
+
 ---
 
 # 💡 Use Cases
 
-PlatformPilot enables engineers to:
+PlatformPilot helps Platform Engineers, DevOps Engineers, and SREs to:
 
 - Monitor Kubernetes cluster health
-- Analyze workload performance
+- Investigate unhealthy workloads
 - Search Kubernetes resources instantly
+- Analyze Prometheus metrics
 - Detect operational incidents
-- Troubleshoot infrastructure issues
-- Visualize Prometheus metrics
+- Review container logs
+- Troubleshoot deployments
 - Accelerate incident response using AI
-- Improve Kubernetes operational visibility
 
 ---
 
 # 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome.
+Contributions are welcome!
 
 Please read **CONTRIBUTING.md** before opening a pull request.
 
@@ -320,7 +295,7 @@ Please read **CONTRIBUTING.md** before opening a pull request.
 
 # 📄 License
 
-This project is licensed under the MIT License. See the **LICENSE** file for more information.
+This project is licensed under the MIT License.
 
 ---
 
@@ -333,5 +308,7 @@ GitHub: https://github.com/AZ1600
 ---
 
 <p align="center">
-⭐ If you found PlatformPilot useful, consider giving the repository a star!
+
+⭐ If you found PlatformPilot useful, please consider giving the repository a star!
+
 </p>
