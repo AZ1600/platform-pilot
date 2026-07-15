@@ -15,8 +15,22 @@ export async function getPods() {
   return res.json();
 }
 
-export async function getPodAnalysis(name) {
-  const res = await fetch(`${API_URL}/analysis/${name}`);
+export async function getPod(namespace, podName) {
+  const res = await fetch(
+    `${API_URL}/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`
+  );
+  return res.json();
+}
+
+export async function getPodAnalysis(namespace, podName) {
+  const res = await fetch(
+    `${API_URL}/analysis/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Pod request failed: ${res.status}`);
+  }
+
   return res.json();
 }
 
@@ -50,11 +64,17 @@ export async function getNamespace(name) {
   return res.json();
 }
 
-export async function getPodLogs(name) {
-  const response = await fetch(`${API_URL}/logs/${name}`);
-  return response.json();
-}
+export async function getPodLogs(namespace, podName) {
+  const res = await fetch(
+    `${API_URL}/logs/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`
+  );
 
+  if (!res.ok) {
+    throw new Error(`Logs request failed: ${res.status}`);
+  }
+
+  return res.json();
+}
 export async function getPrometheusHealth() {
   const response = await fetch(
     "http://127.0.0.1:8000/metrics/health"

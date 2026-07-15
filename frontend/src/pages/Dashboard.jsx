@@ -71,18 +71,23 @@ function Dashboard() {
   const [aiSummary, setAiSummary] = useState(null);
 
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
+const [loading, setLoading] = useState(true);
+const [refreshing, setRefreshing] = useState(false);
+const [exporting, setExporting] = useState(false);
+const [error, setError] = useState(null);
+const [lastUpdated, setLastUpdated] = useState(null);
+
+const [autoRefresh, setAutoRefresh] = useState(true);
+const [refreshInterval, setRefreshInterval] = useState(10);
+const [countdown, setCountdown] = useState(10);
 
 
   const loadDashboard = useCallback(async (manualRefresh = false) => {
     try {
       if (manualRefresh) {
-        setRefreshing(true);
-      }
+  setRefreshing(true);
+  setCountdown(refreshInterval);
+}
 
       setError(null);
 
@@ -246,15 +251,29 @@ function Dashboard() {
 
 
   useEffect(() => {
-    loadDashboard();
+  loadDashboard();
+}, [loadDashboard]);
 
-    const interval = setInterval(() => {
-      loadDashboard();
-    }, 10000);
+useEffect(() => {
+  if (!autoRefresh) {
+    return undefined;
+  }
 
-    return () => clearInterval(interval);
-  }, [loadDashboard]);
+  setCountdown(refreshInterval);
 
+  const timer = setInterval(() => {
+    setCountdown((current) => {
+      if (current <= 1) {
+        loadDashboard();
+        return refreshInterval;
+      }
+
+      return current - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [autoRefresh, refreshInterval, loadDashboard]);
 
   const averageCpu = useMemo(
     () =>
@@ -408,10 +427,43 @@ function Dashboard() {
 </div>
 </div>
 
-        <div className="dashboard-actions">
-
+  <div className="dashboard-actions">
   <div className="dashboard-action-buttons">
+    <div className="live-controls">
+  <button
+    className={`live-toggle ${
+      autoRefresh ? "live" : "paused"
+    }`}
+    type="button"
+    onClick={() => {
+      setAutoRefresh((current) => !current);
+      setCountdown(refreshInterval);
+    }}
+  >
+    {autoRefresh ? "● Live" : "Ⅱ Paused"}
+  </button>
 
+  <select
+    className="refresh-interval-select"
+    value={refreshInterval}
+    onChange={(event) => {
+      const nextInterval = Number(event.target.value);
+
+      setRefreshInterval(nextInterval);
+      setCountdown(nextInterval);
+    }}
+  >
+    <option value={10}>10s</option>
+    <option value={30}>30s</option>
+    <option value={60}>60s</option>
+  </select>
+
+  <span className="refresh-countdown">
+    {autoRefresh
+      ? `Refresh in ${countdown}s`
+      : "Auto-refresh paused"}
+  </span>
+</div>
     <button
       className="export-button"
       type="button"
@@ -422,27 +474,24 @@ function Dashboard() {
     </button>
 
     <button
-      className="refresh-button"
-      type="button"
-      disabled={refreshing}
-      onClick={() => loadDashboard(true)}
-    >
-      {refreshing ? "Refreshing..." : "Refresh"}
-    </button>
-
-  </div>
-
-  {lastUpdated && (
-    <small>
-      Updated {lastUpdated.toLocaleTimeString()}
-    </small>
-  )}
-
+  className="refresh-button"
+  type="button"
+  disabled={refreshing}
+  onClick={() => loadDashboard(true)}
+>
+  {refreshing ? "Refreshing..." : "Refresh"}
+</button>
 </div>
-      </section>
 
+{lastUpdated && (
+  <small>
+    Updated {lastUpdated.toLocaleTimeString()}
+  </small>
+)}
+</div>
+</section>
 
-      {error && (
+{error && (
   <div className="dashboard-warning">
     <strong>Monitoring warning:</strong> {error}
   </div>

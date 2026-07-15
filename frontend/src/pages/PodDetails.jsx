@@ -5,17 +5,24 @@ import { getPodAnalysis, getPodLogs } from "../services/api";
 import StatusBadge from "../components/StatusBadge.jsx";
 
 function PodDetails() {
-  const { podName } = useParams();
+  const { namespace, podName } = useParams();
 
   const [data, setData] = useState(null);
   const [liveLogs, setLiveLogs] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadPodDetails() {
       try {
-        const result = await getPodAnalysis(podName);
+        setLoading(true);
+        setError(null);
+
+        const result = await getPodAnalysis(
+          namespace,
+          podName
+        );
 
         if (result.error) {
           setError(result.error);
@@ -23,26 +30,38 @@ function PodDetails() {
         }
 
         setData(result);
+        setLiveLogs(result.logs?.logs || "");
+        setLastUpdated(new Date().toLocaleTimeString());
       } catch (err) {
+        console.error("Pod details error:", err);
         setError(err.message);
+      } finally {
+        setLoading(false);
       }
     }
 
     loadPodDetails();
-  }, [podName]);
+  }, [namespace, podName]);
 
   useEffect(() => {
     async function loadLogs() {
       try {
-        const result = await getPodLogs(podName);
+        const result = await getPodLogs(
+          namespace,
+          podName
+        );
 
         if (result.error) {
           setLiveLogs(result.error);
         } else {
-          setLiveLogs(result.logs || "No logs available.");
+          setLiveLogs(
+            result.logs || "No logs available."
+          );
         }
 
-        setLastUpdated(new Date().toLocaleTimeString());
+        setLastUpdated(
+          new Date().toLocaleTimeString()
+        );
       } catch (err) {
         setLiveLogs(err.message);
       }
@@ -50,10 +69,23 @@ function PodDetails() {
 
     loadLogs();
 
-    const interval = setInterval(loadLogs, 5000);
+    const interval = setInterval(
+      loadLogs,
+      5000
+    );
 
     return () => clearInterval(interval);
-  }, [podName]);
+  }, [namespace, podName]);
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="card">
+          <h2>Loading pod details...</h2>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -66,13 +98,7 @@ function PodDetails() {
   }
 
   if (!data) {
-    return (
-      <div className="container">
-        <div className="card">
-          <h2>Loading pod details...</h2>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const events = data.events || [];
@@ -88,7 +114,8 @@ function PodDetails() {
         </p>
 
         <p>
-          <strong>Namespace:</strong> {data.pod.namespace}
+          <strong>Namespace:</strong>{" "}
+          {data.pod.namespace}
         </p>
       </div>
 
@@ -97,23 +124,31 @@ function PodDetails() {
 
         <p>
           <strong>Severity:</strong>{" "}
-          <StatusBadge status={data.analysis.severity} />
+          <StatusBadge
+            status={
+              data.analysis?.severity || "Unknown"
+            }
+          />
         </p>
 
         <p>
           <strong>Root Cause:</strong>
           <br />
-          {data.analysis.root_cause}
+          {data.analysis?.root_cause ||
+            "No analysis available."}
         </p>
 
         <p>
           <strong>Recommendation:</strong>
           <br />
-          {data.analysis.recommendation}
+          {data.analysis?.recommendation ||
+            "No recommendation available."}
         </p>
 
         <p>
-          <strong>Owner:</strong> {data.analysis.owner}
+          <strong>Owner:</strong>{" "}
+          {data.analysis?.owner ||
+            "Unassigned"}
         </p>
       </div>
 
@@ -150,11 +185,20 @@ function PodDetails() {
       <div className="card">
         <h2>📜 Live Pod Logs</h2>
 
-        <p style={{ color: "#9ca3af", marginBottom: "12px" }}>
-          Auto-refreshes every 5 seconds. Last Updated: {lastUpdated}
+        <p
+          style={{
+            color: "#9ca3af",
+            marginBottom: "12px",
+          }}
+        >
+          Auto-refreshes every 5 seconds.
+          <br />
+          Last Updated: {lastUpdated}
         </p>
 
-        <pre className="logs">{liveLogs}</pre>
+        <pre className="logs">
+          {liveLogs}
+        </pre>
       </div>
     </div>
   );
