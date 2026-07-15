@@ -55,17 +55,29 @@ def list_all_pods():
     return results
 
 
-def get_pod_events(pod_name: str):
-    events = v1.list_namespaced_event(namespace="default")
+def get_pod_events(
+    pod_name: str,
+    namespace: str = "default",
+):
+    events = v1.list_namespaced_event(
+        namespace=namespace,
+    )
+
     results = []
 
     for event in events.items:
-        if event.involved_object.kind == "Pod" and event.involved_object.name == pod_name:
+        if (
+            event.involved_object.kind == "Pod"
+            and event.involved_object.name == pod_name
+        ):
             results.append({
                 "reason": event.reason,
                 "type": event.type,
                 "message": event.message,
-                "time": str(event.last_timestamp),
+                "time": str(
+                    event.last_timestamp
+                    or event.event_time
+                ),
             })
 
     return results
@@ -110,26 +122,67 @@ def clean_log_text(logs):
     return logs
 
 
-def get_pod_logs(pod_name: str):
+def get_pod_logs(
+    pod_name: str,
+    namespace: str = "default",
+    container_name: str | None = None,
+):
     try:
+        pod = v1.read_namespaced_pod(
+            name=pod_name,
+            namespace=namespace,
+        )
+
+        containers = [
+            container.name
+            for container in pod.spec.containers
+        ]
+
+        selected_container = (
+    container_name
+    if container_name in containers
+    else "grafana"
+    if "grafana" in containers
+    else containers[0] if containers else None
+)
+        if not selected_container:
+            return {
+                "pod": pod_name,
+                "namespace": namespace,
+                "logs": "",
+                "error": "No containers found in Pod.",
+            }
+
         logs = v1.read_namespaced_pod_log(
             name=pod_name,
-            namespace="default",
+            namespace=namespace,
+            container=selected_container,
             tail_lines=100,
         )
 
         return {
             "pod": pod_name,
+            "namespace": namespace,
+            "container": selected_container,
+            "available_containers": containers,
             "logs": clean_log_text(logs),
         }
 
-    except Exception as e:
+    except Exception as error:
         return {
             "pod": pod_name,
+            "namespace": namespace,
             "logs": "",
-            "error": str(e),
+            "error": str(error),
         }
 
+    except Exception as error:
+        return {
+            "pod": pod_name,
+            "namespace": namespace,
+            "logs": "",
+            "error": str(error),
+        }
 
 def list_deployments():
     deployments = apps_v1.list_namespaced_deployment(namespace="default")

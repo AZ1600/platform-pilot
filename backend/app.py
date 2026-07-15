@@ -179,15 +179,18 @@ def analysis():
     }
 
 
-@app.get("/analysis/{pod_name}")
-def pod_analysis(pod_name: str):
-    pods = list_pods()
+@app.get("/analysis/{namespace}/{pod_name}")
+def pod_analysis(namespace: str, pod_name: str):
+    pods = list_all_pods()
 
     pod = next(
         (
             pod
             for pod in pods
-            if pod["name"] == pod_name
+            if (
+                pod["name"] == pod_name
+                and pod["namespace"] == namespace
+            )
         ),
         None,
     )
@@ -197,8 +200,16 @@ def pod_analysis(pod_name: str):
             "error": "Pod not found",
         }
 
-    events = get_pod_events(pod_name)
-    logs = get_pod_logs(pod_name)
+    events = get_pod_events(
+        pod_name,
+        namespace,
+    )
+
+    logs = get_pod_logs(
+        pod_name,
+        namespace,
+    )
+
     recommendation = analyze_pod(pod)
 
     return {

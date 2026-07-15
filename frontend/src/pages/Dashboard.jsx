@@ -362,6 +362,30 @@ useEffect(() => {
   }
 
 
+  if (!summary) {
+    return (
+      <div className="page">
+        <div className="card error-card">
+          <h2>Dashboard unavailable</h2>
+
+          <p>
+            {error ||
+              "PlatformPilot could not load cluster information."}
+          </p>
+
+          <button
+            className="refresh-button"
+            type="button"
+            onClick={() => loadDashboard(true)}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+
   const prometheusStatus = getPrometheusStatus(
     metrics?.prometheus
   );
@@ -1013,42 +1037,90 @@ useEffect(() => {
 <h2 className="dashboard-section-title">
   Incident Center
 </h2>
-      <article className="card">
-        <h2>🚨 Active Incidents</h2>
 
-        {summary.incidents.length === 0 ? (
-          <p>🎉 No active incidents detected.</p>
-        ) : (
-          <div className="table-wrapper">
-            <table className="resource-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Name</th>
-                  <th>Namespace</th>
-                  <th>Status</th>
-                  <th>Severity</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {summary.incidents.map((incident, index) => (
-                  <tr key={`${incident.name}-${index}`}>
-                    <td>{incident.type}</td>
-                    <td>{incident.name}</td>
-                    <td>{incident.namespace}</td>
-                    <td>{incident.status}</td>
-                    <td>{incident.severity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </article>
+<section className="incident-center">
+  <div className="incident-center-header">
+    <div>
+      <h2>🚨 Active Incidents</h2>
+      <p>
+        Real-time operational issues detected across the cluster.
+      </p>
     </div>
-  );
-}
 
+    <span
+      className={`incident-count-badge ${
+        summary.incidents.length === 0
+          ? "healthy"
+          : "critical"
+      }`}
+    >
+      {summary.incidents.length} Active
+    </span>
+  </div>
+
+  {summary.incidents.length === 0 ? (
+    <div className="incident-empty-state">
+      <div className="incident-empty-icon">✓</div>
+
+      <div>
+        <h3>No active incidents</h3>
+        <p>
+          All monitored Kubernetes resources are currently healthy.
+        </p>
+      </div>
+    </div>
+  ) : (
+    <div className="incident-grid">
+      {summary.incidents.map((incident, index) => (
+        <article
+          className={`incident-card ${
+            incident.severity?.toLowerCase() || "unknown"
+          }`}
+          key={`${incident.name}-${index}`}
+        >
+          <div className="incident-card-header">
+            <div>
+              <span className="incident-type">
+                {incident.type}
+              </span>
+
+              <h3>{incident.name}</h3>
+            </div>
+
+            <span className="incident-severity">
+              {incident.severity}
+            </span>
+          </div>
+
+          <div className="incident-details">
+            <div>
+              <span>Namespace</span>
+              <strong>{incident.namespace}</strong>
+            </div>
+
+            <div>
+              <span>Status</span>
+              <strong>{incident.status}</strong>
+            </div>
+          </div>
+
+          <p className="incident-message">
+            {incident.message}
+          </p>
+
+          <div className="incident-action">
+            <span>Recommended action</span>
+            <strong>
+              Inspect the affected resource and review recent events.
+            </strong>
+          </div>
+        </article>
+      ))}
+    </div>
+  )}
+    </section>
+  </div>
+);
+}
 
 export default Dashboard;
