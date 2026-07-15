@@ -1,18 +1,42 @@
 # Changelog
 
-## v0.1.0
+All notable changes to this project will be documented here.
 
-Initial MVP
+---
+
+## [2.0.0] - 2026
 
 ### Added
 
-- FastAPI backend
-- Kubernetes integration
-- Docker support
-- Pod monitoring
-- Deployment monitoring
-- Incident analysis
-- AI recommendations
-- React dashboard
-- React Router
-- Component architecture
+- Global Search
+- Command Palette (Ctrl+K / ⌘K)
+- Performance Analytics
+- AI Operations Summary
+- Incident Center
+- PDF Export
+- Skeleton Loading
+- Auto Refresh Controls
+- Prometheus Integration
+
+### Improved
+
+- Enterprise UI
+- Dashboard Layout
+- Navigation
+- README
+- Component Structure
+
+---
+
+## [1.0.0]
+
+Initial public release.
+
+### Features
+
+- Dashboard
+- Pod Monitoring
+- Deployment Monitoring
+- Namespace Monitoring
+- Node Monitoring
+- AI Recommendations

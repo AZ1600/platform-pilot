@@ -1,8 +1,12 @@
 # 🚀 PlatformPilot
 
-An AI-assisted Kubernetes Operations Dashboard built with **React**, **FastAPI**, and the **Kubernetes Python Client**.
+> **An AI-assisted Kubernetes Observability Platform for monitoring cluster health, analyzing workloads, and accelerating incident response.**
 
-PlatformPilot provides a modern web interface for monitoring Kubernetes clusters, inspecting workloads, analyzing cluster health, and accelerating troubleshooting through intelligent operational insights.
+PlatformPilot combines Kubernetes APIs, Prometheus metrics, and AI-powered operational insights into a modern dashboard designed for Platform Engineers, DevOps Engineers, and Site Reliability Engineers.
+
+<p align="center">
+  <img src="screenshots/dashboard-overview.png" alt="PlatformPilot Dashboard"/>
+</p>
 
 ---
 
@@ -16,101 +20,84 @@ PlatformPilot provides a modern web interface for monitoring Kubernetes clusters
 
 # 📖 Overview
 
-PlatformPilot is an AI-assisted Kubernetes operations dashboard designed for Platform Engineers, DevOps Engineers, and Site Reliability Engineers.
+PlatformPilot is an AI-assisted Kubernetes operations dashboard built with **React**, **FastAPI**, and the **Kubernetes Python Client**.
 
-The application communicates directly with the Kubernetes API to provide real-time visibility into cluster resources, workload health, deployments, nodes, namespaces, and operational events. It also performs intelligent analysis to help engineers identify issues and recommended actions more quickly.
+The platform provides real-time visibility into Kubernetes workloads, cluster infrastructure, performance metrics, and operational health while using AI-powered analysis to help engineers identify issues faster and make informed operational decisions.
+
+---
+
+# ✨ Highlights
+
+- 🚀 Enterprise Kubernetes Observability Dashboard
+- 🤖 AI-assisted Operations Summary
+- 📊 Live Prometheus Monitoring
+- 🔍 Global Search Across Kubernetes Resources
+- ⌨️ Keyboard-driven Command Palette (Ctrl+K / ⌘K)
+- 🚨 Incident Detection & Health Scoring
+- 📄 PDF Report Export
+- ⚡ Auto Refresh
 
 ---
 
 # ✨ Features
 
-## 📊 Cluster Dashboard
+## 📊 Cluster Observability
 
 - Overall Cluster Health Score
-- AI Cluster Summary
-- Cluster Recommendations
-- Active Incident Detection
-- Recent Kubernetes Events
-- Manual Refresh
-- Automatic Refresh (Every 10 Seconds)
+- Live Monitoring Dashboard
+- Real-time Kubernetes Metrics
+- Prometheus Health Monitoring
+- Manual & Automatic Refresh
+- Export Dashboard as PDF
 
 ---
 
-## 📦 Pod Monitoring
+## 🤖 AI Operations
 
-- View Running Pods
-- Search Pods
-- Filter by Status
-- Detailed Pod Inspection
-- Kubernetes Events
-- Live Container Logs
-- AI Root Cause Analysis
-- Severity Classification
+- AI Operations Summary
+- Cluster Health Analysis
 - Operational Recommendations
-
----
-
-## 🚀 Deployment Monitoring
-
-- List Deployments
-- Search Deployments
-- Health Filtering
-- Replica Status
-- Deployment Conditions
-- Related Pods
-- AI Deployment Analysis
-
----
-
-## 🖥 Node Monitoring
-
-- List Cluster Nodes
-- Search Nodes
-- Ready Status Filter
-- Capacity & Allocatable Resources
-- Container Runtime Information
-- Kubernetes Version
-- AI Node Health Analysis
-
----
-
-## 📁 Namespace Monitoring
-
-- List Namespaces
-- Search Namespaces
-- Status Filtering
-- Namespace Resource Summary
-- Resource Counts
-- Healthy & Unhealthy Pods
-- AI Namespace Analysis
-
----
-
-# 🤖 AI Features
-
-PlatformPilot performs intelligent operational analysis and provides:
-
 - Root Cause Analysis
 - Severity Classification
-- Recommended Actions
-- Suggested Owner
-- Cluster Health Summary
+- Incident Detection
+
+---
+
+## 📈 Performance Analytics
+
+- CPU & Memory Trends
+- Pod Status Distribution
+- Namespace Workload Analytics
+- Resource Utilization
+- Prometheus Metrics
+
+---
+
+## 🔍 Productivity
+
+- Global Resource Search
+- Command Palette (Ctrl+K / ⌘K)
+- Keyboard Navigation
+- Fast Resource Discovery
+- Search Pods, Deployments, Nodes & Namespaces
 
 ---
 
 # 🏗 Architecture
 
-```
-                    React Frontend
-                           │
-                           ▼
-                    FastAPI Backend
-                           │
-                           ▼
-             Kubernetes Python Client
-                           │
-                           ▼
-                  Kubernetes Cluster
+```text
+                 React Frontend
+                        │
+                        ▼
+                 FastAPI Backend
+                        │
+        ┌───────────────┴───────────────┐
+        ▼                               ▼
+ Kubernetes Python Client        Prometheus Metrics
+        │                               │
+        └───────────────┬───────────────┘
+                        ▼
+                Kubernetes Cluster
 ```
 
 ---
@@ -119,64 +106,46 @@ PlatformPilot performs intelligent operational analysis and provides:
 
 ## Frontend
 
-- React
+- React 19
 - React Router
-- CSS3
-- Fetch API
 - Vite
-
----
+- CSS3
 
 ## Backend
 
 - FastAPI
-- Python
+- Python 3.12
 - Kubernetes Python Client
 - Uvicorn
 
----
+## Infrastructure
 
-## Kubernetes
-
-- Docker Desktop Kubernetes
+- Kubernetes
+- Prometheus
+- Docker Desktop
 - kubectl
-- Kubernetes API
 
 ---
 
 # 📂 Project Structure
 
-```
+```text
 platform-pilot/
 │
 ├── backend/
-│   ├── app.py
-│   ├── ai.py
-│   ├── kubernetes_client.py
-│   ├── requirements.txt
-│
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── App.jsx
-│   │
-│   ├── package.json
-│   └── vite.config.js
-│
+├── infrastructure/
 ├── screenshots/
-│   ├── dashboard.png
-│   ├── ai-summary.png
-│   ├── pods.png
-│   ├── pod-details.png
-│   ├── deployments.png
-│   ├── deployment-details.png
-│   ├── nodes.png
-│   ├── node-details.png
-│   └── namespace-details.png
+│   ├── dashboard-overview.png
+│   ├── global-search.png
+│   ├── command-palette.png
+│   ├── performance-analytics.png
+│   ├── ai-operations-summary.png
+│   └── incident-center.png
 │
-├── COMMANDS.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
 ├── README.md
 └── .gitignore
 ```
@@ -185,76 +154,59 @@ platform-pilot/
 
 # 📸 Screenshots
 
-## 📊 Dashboard
+## 🚀 Dashboard Overview
 
-The Dashboard provides a centralized view of the Kubernetes cluster, displaying the overall health score, resource counts, AI-generated recommendations, recent cluster events, and active incidents. It serves as the primary landing page for monitoring cluster health.
+The main dashboard provides a centralized view of cluster health, live monitoring, AI insights, and operational metrics.
 
-![Dashboard](screenshots/dashboard.png)
-
----
-
-## 🤖 AI Cluster Summary
-
-The AI Summary page presents an intelligent overview of the Kubernetes environment by analyzing the health of cluster resources and highlighting operational recommendations. This allows engineers to quickly understand the overall state of the cluster without manually inspecting every workload.
-
-![AI Summary](screenshots/ai-summary.png)
+![Dashboard Overview](screenshots/dashboard-overview.png)
 
 ---
 
-## 📦 Pods
+## 🔍 Global Search
 
-The Pods page lists all workloads running within the cluster. Users can search by pod name or namespace, filter workloads by status, and quickly identify pods that require investigation.
+Search Kubernetes resources instantly across Pods, Deployments, Nodes, and Namespaces.
 
-![Pods](screenshots/pods.png)
-
----
-
-## 📦 Pod Details
-
-The Pod Details page provides comprehensive information about an individual pod, including Kubernetes events, live container logs, and AI-assisted root cause analysis with severity classification and operational recommendations.
-
-![Pod Details](screenshots/pod-details.png)
+![Global Search](screenshots/global-search.png)
 
 ---
 
-## 🚀 Deployments
+## ⌨️ Command Palette
 
-The Deployments page displays every deployment running within the Kubernetes cluster. Engineers can search deployments, monitor replica health, and quickly identify workloads that are degraded or unavailable.
+Quickly navigate the platform using the keyboard-driven Command Palette (**Ctrl+K / ⌘K**).
 
-![Deployments](screenshots/deployments.png)
-
----
-
-## 🚀 Deployment Details
-
-The Deployment Details page displays deployment metadata, replica status, deployment conditions, related pods, and AI-generated health analysis to assist with deployment troubleshooting and operational decision making.
-
-![Deployment Details](screenshots/deployment-details.png)
+![Command Palette](screenshots/command-palette.png)
 
 ---
 
-## 🖥 Nodes
+## 📈 Performance Analytics
 
-The Nodes page provides a high-level overview of every Kubernetes node, including readiness status, operating system, Kubernetes version, and quick filtering capabilities for cluster infrastructure monitoring.
+Visualize CPU usage, memory consumption, pod status, and namespace workload distribution through real-time charts.
 
-![Nodes](screenshots/nodes.png)
-
----
-
-## 🖥 Node Details
-
-The Node Details page displays detailed infrastructure information such as CPU capacity, memory allocation, container runtime, kernel version, and AI-generated health recommendations to help engineers assess node health.
-
-![Node Details](screenshots/node-details.png)
+![Performance Analytics](screenshots/performance-analytics.png)
 
 ---
 
-## 📁 Namespace Details
+## 🤖 AI Operations Summary
 
-The Namespace Details page summarizes all Kubernetes resources within a namespace, including pods, deployments, services, ConfigMaps, secrets, unhealthy workloads, and AI-generated operational insights to provide a complete overview of namespace health.
+Receive AI-generated operational insights, health scoring, findings, and recommended actions.
 
-![Namespace Details](screenshots/namespace-details.png)
+![AI Operations Summary](screenshots/ai-operations-summary.png)
 
+---
+
+## 🚨 Incident Center
+
+Track cluster incidents, operational alerts, and active health issues from a centralized dashboard.
+
+![Incident Center](screenshots/incident-center.png)
+
+---
+
+# 🌟 PlatformPilot Project Overview
+
+This infographic summarizes PlatformPilot's architecture, roadmap, repository highlights, and upcoming features.
+
+![PlatformPilot Overview](screenshots/platformpilot-overview.png)
 ---
 
 # 🚀 Getting Started
@@ -276,7 +228,11 @@ cd backend
 
 python -m venv venv
 
+# Linux / macOS
 source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
 
 pip install -r requirements.txt
 
@@ -313,21 +269,14 @@ http://localhost:5173
 
 ## ✅ Completed
 
-- Dashboard
-- AI Cluster Summary
-- Pod Monitoring
-- Pod Details
-- Deployment Monitoring
-- Deployment Details
-- Node Monitoring
-- Node Details
-- Namespace Monitoring
-- Namespace Details
-- Live Container Logs
-- Kubernetes Events
-- AI Recommendations
-- Search & Filtering
-- Manual Refresh
+- Enterprise Dashboard
+- AI Operations Summary
+- Performance Analytics
+- Prometheus Integration
+- Global Search
+- Command Palette
+- Incident Center
+- PDF Export
 - Auto Refresh
 - Responsive UI
 
@@ -335,14 +284,12 @@ http://localhost:5173
 
 ## 🚀 Planned
 
-- Interactive Charts
-- Prometheus Metrics
-- Grafana Integration
-- WebSocket Live Updates
-- Historical Metrics
 - Authentication
-- Multi-Cluster Support
-- RBAC
+- Role-Based Access Control (RBAC)
+- Multi-cluster Support
+- Historical Metrics
+- WebSocket Live Updates
+- Grafana Integration
 - Helm Monitoring
 - LLM-powered Root Cause Analysis
 
@@ -350,22 +297,30 @@ http://localhost:5173
 
 # 💡 Use Cases
 
-PlatformPilot helps engineers:
+PlatformPilot enables engineers to:
 
-- Monitor Kubernetes workloads
-- Detect unhealthy resources
-- Troubleshoot pod failures
-- Analyze deployment health
-- Monitor cluster infrastructure
-- Review namespace resources
-- Accelerate incident response
+- Monitor Kubernetes cluster health
+- Analyze workload performance
+- Search Kubernetes resources instantly
+- Detect operational incidents
+- Troubleshoot infrastructure issues
+- Visualize Prometheus metrics
+- Accelerate incident response using AI
 - Improve Kubernetes operational visibility
+
+---
+
+# 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome.
+
+Please read **CONTRIBUTING.md** before opening a pull request.
 
 ---
 
 # 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the **LICENSE** file for more information.
 
 ---
 
@@ -373,9 +328,10 @@ This project is licensed under the MIT License.
 
 **Olawale Azeez**
 
-GitHub:
-https://github.com/AZ1600
+GitHub: https://github.com/AZ1600
 
 ---
 
-⭐ If you found this project useful, consider giving it a star on GitHub!
+<p align="center">
+⭐ If you found PlatformPilot useful, consider giving the repository a star!
+</p>
