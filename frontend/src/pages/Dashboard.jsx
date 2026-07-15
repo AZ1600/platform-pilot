@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+
 import {
   Area,
   AreaChart,
@@ -16,6 +17,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+import DashboardSkeleton from "../components/DashboardSkeleton";
 
 import {
   getAiSummary,
@@ -322,20 +325,8 @@ useEffect(() => {
 
 
   if (loading) {
-    return (
-      <div className="page">
-        <div className="loading-state">
-          <div className="loading-spinner" />
-
-          <h2>Loading PlatformPilot...</h2>
-
-          <p>
-            Reading Kubernetes resources and Prometheus metrics.
-          </p>
-        </div>
-      </div>
-    );
-  }
+    return <DashboardSkeleton />;
+}
 
 
   if (!summary) {
