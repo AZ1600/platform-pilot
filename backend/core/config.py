@@ -13,6 +13,19 @@ PROMETHEUS_TIMEOUT_SECONDS = int(
     os.getenv("PROMETHEUS_TIMEOUT_SECONDS", "10")
 )
 
+CLOUDOPS_FINDINGS_URL = os.getenv(
+    "CLOUDOPS_FINDINGS_URL",
+    "http://127.0.0.1:3000/api/platform-pilot/findings",
+)
+
+CLOUDOPS_TIMEOUT_SECONDS = int(
+    os.getenv("CLOUDOPS_TIMEOUT_SECONDS", "10")
+)
+
+CLOUDOPS_INGEST_TOKEN = os.getenv(
+    "CLOUDOPS_INGEST_TOKEN"
+)
+
 CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
