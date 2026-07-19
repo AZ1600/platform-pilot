@@ -12,3 +12,8 @@ def test_cloudops_config_has_safe_local_defaults():
     )
     assert config.CLOUDOPS_TIMEOUT_SECONDS == 10
     assert config.CLOUDOPS_INGEST_TOKEN is None
+
+
+def test_cloudops_context_has_safe_local_defaults():
+    assert config.PLATFORM_ENVIRONMENT == "local"
+    assert config.KUBERNETES_CLUSTER_NAME == "docker-desktop"

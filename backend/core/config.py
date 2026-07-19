@@ -30,3 +30,13 @@ CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
+PLATFORM_ENVIRONMENT = os.getenv(
+    "PLATFORM_ENVIRONMENT",
+    "local",
+)
+
+KUBERNETES_CLUSTER_NAME = os.getenv(
+    "KUBERNETES_CLUSTER_NAME",
+    "docker-desktop",
+)
