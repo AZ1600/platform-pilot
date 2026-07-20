@@ -89,13 +89,13 @@ function App() {
         />
       </Routes>
 
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-      />
+            {paletteOpen && (
+        <CommandPalette
+          onClose={() => setPaletteOpen(false)}
+        />
+      )}
     </BrowserRouter>
   );
 }
-
 
 export default App;

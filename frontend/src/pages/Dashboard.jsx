@@ -27,9 +27,7 @@ import {
   getPrometheusNamespaceMetrics,
 } from "../services/api";
 
-
 const HISTORY_LIMIT = 20;
-
 
 function calculateAverage(items, propertyName) {
   if (!items?.length) {
@@ -43,7 +41,6 @@ function calculateAverage(items, propertyName) {
 
   return Number((total / items.length).toFixed(2));
 }
-
 
 function getPrometheusStatus(prometheus) {
   if (!prometheus?.reachable) {
@@ -66,7 +63,6 @@ function getPrometheusStatus(prometheus) {
   };
 }
 
-
 function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [metrics, setMetrics] = useState(null);
@@ -74,152 +70,135 @@ function Dashboard() {
   const [aiSummary, setAiSummary] = useState(null);
 
   const [history, setHistory] = useState([]);
-const [loading, setLoading] = useState(true);
-const [refreshing, setRefreshing] = useState(false);
-const [exporting, setExporting] = useState(false);
-const [error, setError] = useState(null);
-const [lastUpdated, setLastUpdated] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-const [autoRefresh, setAutoRefresh] = useState(true);
-const [refreshInterval, setRefreshInterval] = useState(10);
-const [countdown, setCountdown] = useState(10);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(10);
+  const [countdown, setCountdown] = useState(10);
 
+  const loadDashboard = useCallback(
+    async (manualRefresh = false) => {
+      try {
+        if (manualRefresh) {
+          setRefreshing(true);
+          setCountdown(refreshInterval);
+        }
 
-  const loadDashboard = useCallback(async (manualRefresh = false) => {
-    try {
-      if (manualRefresh) {
-  setRefreshing(true);
-  setCountdown(refreshInterval);
-}
+        setError(null);
 
-      setError(null);
+        const [
+          clusterData,
+          metricsData,
+          namespaceData,
+          aiData,
+        ] = await Promise.all([
+          getClusterSummary(),
+          getPrometheusClusterMetrics(),
+          getPrometheusNamespaceMetrics(),
+          getAiSummary(),
+        ]);
 
-      const [
-        clusterData,
-        metricsData,
-        namespaceData,
-        aiData,
-      ] = await Promise.all([
-        getClusterSummary(),
-        getPrometheusClusterMetrics(),
-        getPrometheusNamespaceMetrics(),
-        getAiSummary(),
-      ]);
+        const averageCpu = calculateAverage(
+          metricsData.cpu,
+          "cpu_usage_percent"
+        );
 
-      const averageCpu = calculateAverage(
-        metricsData.cpu,
-        "cpu_usage_percent"
-      );
+        const averageMemory = calculateAverage(
+          metricsData.memory,
+          "memory_usage_percent"
+        );
 
-      const averageMemory = calculateAverage(
-        metricsData.memory,
-        "memory_usage_percent"
-      );
+        const now = new Date();
 
-      const now = new Date();
+        setSummary(clusterData);
+        setMetrics(metricsData);
+        setNamespaceMetrics(namespaceData.namespaces || []);
+        setAiSummary(aiData);
+        setLastUpdated(now);
 
-      setSummary(clusterData);
-      setMetrics(metricsData);
-      setNamespaceMetrics(namespaceData.namespaces || []);
-      setAiSummary(aiData);
-      setLastUpdated(now);
+        setHistory((currentHistory) => {
+          const nextHistory = [
+            ...currentHistory,
+            {
+              time: now.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              }),
+              cpu: averageCpu,
+              memory: averageMemory,
+            },
+          ];
 
-      setHistory((currentHistory) => {
-        const nextHistory = [
-          ...currentHistory,
-          {
-            time: now.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            }),
-            cpu: averageCpu,
-            memory: averageMemory,
-          },
-        ];
+          return nextHistory.slice(-HISTORY_LIMIT);
+        });
+      } catch (err) {
+        console.error("Dashboard loading error:", err);
 
-        return nextHistory.slice(-HISTORY_LIMIT);
-      });
-    } catch (err) {
-      console.error("Dashboard loading error:", err);
-
-      setError(
-        err.message ||
-          "PlatformPilot could not load observability data."
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-
-  const exportDashboardReport = async () => {
-  const dashboardElement = document.getElementById(
-    "platformpilot-dashboard-report"
+        setError(
+          err.message ||
+            "PlatformPilot could not load observability data."
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [refreshInterval]
   );
 
-  if (!dashboardElement) {
-    setError("PlatformPilot could not find the dashboard report.");
-    return;
-  }
-
-  try {
-    setExporting(true);
-    setError(null);
-
-    const canvas = await html2canvas(dashboardElement, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#0f111a",
-      logging: false,
-      windowWidth: dashboardElement.scrollWidth,
-      windowHeight: dashboardElement.scrollHeight,
-    });
-
-    const imageData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const margin = 10;
-    const availableWidth = pageWidth - margin * 2;
-    const availableHeight = pageHeight - margin * 2;
-
-    const imageHeight =
-      (canvas.height * availableWidth) / canvas.width;
-
-    let remainingHeight = imageHeight;
-    let imagePosition = margin;
-
-    pdf.setFillColor(15, 17, 26);
-    pdf.rect(0, 0, pageWidth, pageHeight, "F");
-
-    pdf.addImage(
-      imageData,
-      "PNG",
-      margin,
-      imagePosition,
-      availableWidth,
-      imageHeight
+  const exportDashboardReport = async () => {
+    const dashboardElement = document.getElementById(
+      "platformpilot-dashboard-report"
     );
 
-    remainingHeight -= availableHeight;
+    if (!dashboardElement) {
+      setError(
+        "PlatformPilot could not find the dashboard report."
+      );
+      return;
+    }
 
-    while (remainingHeight > 0) {
-      pdf.addPage();
+    try {
+      setExporting(true);
+      setError(null);
+
+      const canvas = await html2canvas(dashboardElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0f111a",
+        logging: false,
+        windowWidth: dashboardElement.scrollWidth,
+        windowHeight: dashboardElement.scrollHeight,
+      });
+
+      const imageData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const margin = 10;
+      const availableWidth = pageWidth - margin * 2;
+      const availableHeight = pageHeight - margin * 2;
+
+      const imageHeight =
+        (canvas.height * availableWidth) / canvas.width;
+
+      let remainingHeight = imageHeight;
+      let imagePosition = margin;
 
       pdf.setFillColor(15, 17, 26);
       pdf.rect(0, 0, pageWidth, pageHeight, "F");
-
-      imagePosition =
-        margin - (imageHeight - remainingHeight);
 
       pdf.addImage(
         imageData,
@@ -231,52 +210,86 @@ const [countdown, setCountdown] = useState(10);
       );
 
       remainingHeight -= availableHeight;
-    }
 
-    const timestamp = new Date()
-      .toISOString()
-      .replaceAll(":", "-")
-      .replaceAll(".", "-");
+      while (remainingHeight > 0) {
+        pdf.addPage();
 
-    pdf.save(
-      `platformpilot-cluster-report-${timestamp}.pdf`
-    );
-  } catch (err) {
-    console.error("PDF export error:", err);
+        pdf.setFillColor(15, 17, 26);
+        pdf.rect(0, 0, pageWidth, pageHeight, "F");
 
-    setError(
-      "PlatformPilot could not export the dashboard report."
-    );
-  } finally {
-    setExporting(false);
-  }
-};
+        imagePosition =
+          margin - (imageHeight - remainingHeight);
 
+        pdf.addImage(
+          imageData,
+          "PNG",
+          margin,
+          imagePosition,
+          availableWidth,
+          imageHeight
+        );
 
-  useEffect(() => {
-  loadDashboard();
-}, [loadDashboard]);
-
-useEffect(() => {
-  if (!autoRefresh) {
-    return undefined;
-  }
-
-  setCountdown(refreshInterval);
-
-  const timer = setInterval(() => {
-    setCountdown((current) => {
-      if (current <= 1) {
-        loadDashboard();
-        return refreshInterval;
+        remainingHeight -= availableHeight;
       }
 
-      return current - 1;
-    });
-  }, 1000);
+      const timestamp = new Date()
+        .toISOString()
+        .replaceAll(":", "-")
+        .replaceAll(".", "-");
 
-  return () => clearInterval(timer);
-}, [autoRefresh, refreshInterval, loadDashboard]);
+      pdf.save(
+        `platformpilot-cluster-report-${timestamp}.pdf`
+      );
+    } catch (err) {
+      console.error("PDF export error:", err);
+
+      setError(
+        "PlatformPilot could not export the dashboard report."
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => {
+      void loadDashboard();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(initialLoad);
+    };
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!autoRefresh) {
+      return undefined;
+    }
+
+    let secondsRemaining = refreshInterval;
+
+    const countdownReset = window.setTimeout(() => {
+      setCountdown(refreshInterval);
+    }, 0);
+
+    const timer = window.setInterval(() => {
+      secondsRemaining -= 1;
+
+      if (secondsRemaining <= 0) {
+        secondsRemaining = refreshInterval;
+        setCountdown(refreshInterval);
+        void loadDashboard();
+        return;
+      }
+
+      setCountdown(secondsRemaining);
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(countdownReset);
+      window.clearInterval(timer);
+    };
+  }, [autoRefresh, refreshInterval, loadDashboard]);
 
   const averageCpu = useMemo(
     () =>
@@ -296,38 +309,36 @@ useEffect(() => {
     [metrics]
   );
 
-
   const podChartData = useMemo(
-    () => [
-      {
-        name: "Running",
-        value: metrics?.pods?.running || 0,
-      },
-      {
-        name: "Pending",
-        value: metrics?.pods?.pending || 0,
-      },
-      {
-        name: "Failed",
-        value: metrics?.pods?.failed || 0,
-      },
-      {
-        name: "Succeeded",
-        value: metrics?.pods?.succeeded || 0,
-      },
-      {
-        name: "Unknown",
-        value: metrics?.pods?.unknown || 0,
-      },
-    ].filter((item) => item.value > 0),
+    () =>
+      [
+        {
+          name: "Running",
+          value: metrics?.pods?.running || 0,
+        },
+        {
+          name: "Pending",
+          value: metrics?.pods?.pending || 0,
+        },
+        {
+          name: "Failed",
+          value: metrics?.pods?.failed || 0,
+        },
+        {
+          name: "Succeeded",
+          value: metrics?.pods?.succeeded || 0,
+        },
+        {
+          name: "Unknown",
+          value: metrics?.pods?.unknown || 0,
+        },
+      ].filter((item) => item.value > 0),
     [metrics]
   );
 
-
   if (loading) {
     return <DashboardSkeleton />;
-}
-
+  }
 
   if (!summary) {
     return (
@@ -343,7 +354,7 @@ useEffect(() => {
           <button
             className="refresh-button"
             type="button"
-            onClick={() => loadDashboard(true)}
+            onClick={() => void loadDashboard(true)}
           >
             Try Again
           </button>
@@ -351,31 +362,6 @@ useEffect(() => {
       </div>
     );
   }
-
-
-  if (!summary) {
-    return (
-      <div className="page">
-        <div className="card error-card">
-          <h2>Dashboard unavailable</h2>
-
-          <p>
-            {error ||
-              "PlatformPilot could not load cluster information."}
-          </p>
-
-          <button
-            className="refresh-button"
-            type="button"
-            onClick={() => loadDashboard(true)}
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
 
   const prometheusStatus = getPrometheusStatus(
     metrics?.prometheus
@@ -384,8 +370,7 @@ useEffect(() => {
   const runningPods =
     metrics?.pods?.running ?? summary.pods.running;
 
-  const pendingPods =
-    metrics?.pods?.pending ?? 0;
+  const pendingPods = metrics?.pods?.pending ?? 0;
 
   const failedPods =
     metrics?.pods?.failed ?? summary.pods.failed;
@@ -393,136 +378,151 @@ useEffect(() => {
   const totalPods =
     metrics?.pods?.total ?? summary.pods.total;
 
-
   return (
-  <div
-    className="page"
-    id="platformpilot-dashboard-report"
-  >
-    <section className="hero-card dashboard-hero">
-        <div className="hero-content">
-
-  <span className="hero-badge">
-    🚀 PLATFORMPILOT
-  </span>
-
-  <h1>
-    Enterprise Kubernetes
-    <br />
-    Observability Platform
-  </h1>
-
-  <p>
-    Real-time monitoring, AI-powered insights,
-    Prometheus metrics and Kubernetes health
-    analytics.
-  </p>
-<div className="hero-metrics">
-
-  <div>
-    <span>Health</span>
-    <strong>{summary.health_score}/100</strong>
-  </div>
-
-  <div>
-    <span>CPU</span>
-    <strong>{averageCpu}%</strong>
-  </div>
-
-  <div>
-    <span>Memory</span>
-    <strong>{averageMemory}%</strong>
-  </div>
-
-  <div>
-    <span>Pods</span>
-    <strong>{runningPods}</strong>
-  </div>
-
-</div>
-</div>
-
-  <div className="dashboard-actions">
-  <div className="dashboard-action-buttons">
-    <div className="live-controls">
-  <button
-    className={`live-toggle ${
-      autoRefresh ? "live" : "paused"
-    }`}
-    type="button"
-    onClick={() => {
-      setAutoRefresh((current) => !current);
-      setCountdown(refreshInterval);
-    }}
-  >
-    {autoRefresh ? "● Live" : "Ⅱ Paused"}
-  </button>
-
-  <select
-    className="refresh-interval-select"
-    value={refreshInterval}
-    onChange={(event) => {
-      const nextInterval = Number(event.target.value);
-
-      setRefreshInterval(nextInterval);
-      setCountdown(nextInterval);
-    }}
-  >
-    <option value={10}>10s</option>
-    <option value={30}>30s</option>
-    <option value={60}>60s</option>
-  </select>
-
-  <span className="refresh-countdown">
-    {autoRefresh
-      ? `Refresh in ${countdown}s`
-      : "Auto-refresh paused"}
-  </span>
-</div>
-    <button
-      className="export-button"
-      type="button"
-      disabled={exporting}
-      onClick={exportDashboardReport}
+    <div
+      className="page"
+      id="platformpilot-dashboard-report"
     >
-      {exporting ? "Exporting..." : "Export PDF"}
-    </button>
+      <section className="hero-card dashboard-hero">
+        <div className="hero-content">
+          <span className="hero-badge">
+            🚀 PLATFORMPILOT
+          </span>
 
-    <button
-  className="refresh-button"
-  type="button"
-  disabled={refreshing}
-  onClick={() => loadDashboard(true)}
->
-  {refreshing ? "Refreshing..." : "Refresh"}
-</button>
-</div>
+          <h1>
+            Enterprise Kubernetes
+            <br />
+            Observability Platform
+          </h1>
 
-{lastUpdated && (
-  <small>
-    Updated {lastUpdated.toLocaleTimeString()}
-  </small>
-)}
-</div>
-</section>
+          <p>
+            Real-time monitoring, AI-powered insights,
+            Prometheus metrics and Kubernetes health
+            analytics.
+          </p>
 
-{error && (
-  <div className="dashboard-warning">
-    <strong>Monitoring warning:</strong> {error}
-  </div>
-)}
+          <div className="hero-metrics">
+            <div>
+              <span>Health</span>
+              <strong>
+                {summary.health_score}/100
+              </strong>
+            </div>
 
-<h2 className="dashboard-section-title">
-  Cluster Health
-</h2>
+            <div>
+              <span>CPU</span>
+              <strong>{averageCpu}%</strong>
+            </div>
 
-<div className="section-heading">
+            <div>
+              <span>Memory</span>
+              <strong>{averageMemory}%</strong>
+            </div>
+
+            <div>
+              <span>Pods</span>
+              <strong>{runningPods}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-actions">
+          <div className="dashboard-action-buttons">
+            <div className="live-controls">
+              <button
+                className={`live-toggle ${
+                  autoRefresh ? "live" : "paused"
+                }`}
+                type="button"
+                onClick={() => {
+                  setAutoRefresh(
+                    (current) => !current
+                  );
+                  setCountdown(refreshInterval);
+                }}
+              >
+                {autoRefresh
+                  ? "● Live"
+                  : "Ⅱ Paused"}
+              </button>
+
+              <select
+                className="refresh-interval-select"
+                value={refreshInterval}
+                onChange={(event) => {
+                  const nextInterval = Number(
+                    event.target.value
+                  );
+
+                  setRefreshInterval(nextInterval);
+                  setCountdown(nextInterval);
+                }}
+              >
+                <option value={10}>10s</option>
+                <option value={30}>30s</option>
+                <option value={60}>60s</option>
+              </select>
+
+              <span className="refresh-countdown">
+                {autoRefresh
+                  ? `Refresh in ${countdown}s`
+                  : "Auto-refresh paused"}
+              </span>
+            </div>
+
+            <button
+              className="export-button"
+              type="button"
+              disabled={exporting}
+              onClick={exportDashboardReport}
+            >
+              {exporting
+                ? "Exporting..."
+                : "Export PDF"}
+            </button>
+
+            <button
+              className="refresh-button"
+              type="button"
+              disabled={refreshing}
+              onClick={() =>
+                void loadDashboard(true)
+              }
+            >
+              {refreshing
+                ? "Refreshing..."
+                : "Refresh"}
+            </button>
+          </div>
+
+          {lastUpdated && (
+            <small>
+              Updated{" "}
+              {lastUpdated.toLocaleTimeString()}
+            </small>
+          )}
+        </div>
+      </section>
+
+      {error && (
+        <div className="dashboard-warning">
+          <strong>Monitoring warning:</strong>{" "}
+          {error}
+        </div>
+      )}
+
+      <h2 className="dashboard-section-title">
+        Cluster Health
+      </h2>
+
+      <div className="section-heading">
         <div>
           <h2>☸️ Kubernetes Overview</h2>
-          <p>Current cluster resources and health.</p>
+          <p>
+            Current cluster resources and health.
+          </p>
         </div>
       </div>
-
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -540,7 +540,9 @@ useEffect(() => {
         <div className="stat-card">
           <h3>Deployments</h3>
           <h2>{summary.deployments.total}</h2>
-          <p>{summary.deployments.healthy} Healthy</p>
+          <p>
+            {summary.deployments.healthy} Healthy
+          </p>
         </div>
 
         <div className="stat-card">
@@ -566,13 +568,17 @@ useEffect(() => {
         </div>
       </div>
 
-<h2 className="dashboard-section-title">
-  Live Monitoring
-</h2>
+      <h2 className="dashboard-section-title">
+        Live Monitoring
+      </h2>
+
       <div className="section-heading">
         <div>
           <h2>🔥 Prometheus Observability</h2>
-          <p>Live performance and monitoring information.</p>
+          <p>
+            Live performance and monitoring
+            information.
+          </p>
         </div>
 
         <span
@@ -582,10 +588,10 @@ useEffect(() => {
         </span>
       </div>
 
-
       <div className="metrics-grid">
         <div className="metric-card">
           <span className="metric-icon">⚡</span>
+
           <div>
             <h3>Cluster CPU</h3>
             <h2>{averageCpu}%</h2>
@@ -595,6 +601,7 @@ useEffect(() => {
 
         <div className="metric-card">
           <span className="metric-icon">💾</span>
+
           <div>
             <h3>Cluster Memory</h3>
             <h2>{averageMemory}%</h2>
@@ -604,6 +611,7 @@ useEffect(() => {
 
         <div className="metric-card">
           <span className="metric-icon">🟢</span>
+
           <div>
             <h3>Running Pods</h3>
             <h2>{runningPods}</h2>
@@ -613,6 +621,7 @@ useEffect(() => {
 
         <div className="metric-card">
           <span className="metric-icon">🟡</span>
+
           <div>
             <h3>Pending Pods</h3>
             <h2>{pendingPods}</h2>
@@ -622,6 +631,7 @@ useEffect(() => {
 
         <div className="metric-card">
           <span className="metric-icon">🔴</span>
+
           <div>
             <h3>Failed Pods</h3>
             <h2>{failedPods}</h2>
@@ -631,20 +641,27 @@ useEffect(() => {
 
         <div className="metric-card">
           <span className="metric-icon">🎯</span>
+
           <div>
             <h3>Prometheus Targets</h3>
+
             <h2>
-              {metrics?.prometheus?.healthy_targets ?? 0}/
-              {metrics?.prometheus?.total_targets ?? 0}
+              {metrics?.prometheus
+                ?.healthy_targets ?? 0}
+              /
+              {metrics?.prometheus
+                ?.total_targets ?? 0}
             </h2>
+
             <p>Healthy scrape targets</p>
           </div>
         </div>
       </div>
 
-<h2 className="dashboard-section-title">
-  Performance Analytics
-</h2>
+      <h2 className="dashboard-section-title">
+        Performance Analytics
+      </h2>
+
       <div className="charts-grid">
         <article className="card chart-card">
           <div className="chart-heading">
@@ -655,7 +672,10 @@ useEffect(() => {
           </div>
 
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer
+              width="100%"
+              height={300}
+            >
               <AreaChart data={history}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -699,17 +719,21 @@ useEffect(() => {
           </div>
         </article>
 
-
         <article className="card chart-card">
           <div className="chart-heading">
             <div>
               <h2>📦 Pod Status</h2>
-              <p>Current Kubernetes Pod phases.</p>
+              <p>
+                Current Kubernetes Pod phases.
+              </p>
             </div>
           </div>
 
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer
+              width="100%"
+              height={300}
+            >
               <PieChart>
                 <Pie
                   data={podChartData}
@@ -746,19 +770,25 @@ useEffect(() => {
         </article>
       </div>
 
-
       <article className="card chart-card">
         <div className="chart-heading">
           <div>
-            <h2>🗂️ Running Pods by Namespace</h2>
+            <h2>
+              🗂️ Running Pods by Namespace
+            </h2>
+
             <p>
-              Workload distribution across the cluster.
+              Workload distribution across the
+              cluster.
             </p>
           </div>
         </div>
 
         <div className="chart-container">
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer
+            width="100%"
+            height={320}
+          >
             <BarChart data={namespaceMetrics}>
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -788,129 +818,165 @@ useEffect(() => {
         </div>
       </article>
 
-<h2 className="dashboard-section-title">
-  Operations Center
-</h2>
-           <div className="bottom-grid">
+      <h2 className="dashboard-section-title">
+        Operations Center
+      </h2>
+
+      <div className="bottom-grid">
         <article className="card node-summary-card">
-  <div className="node-summary-header">
-    <div>
-      <h2>🖥️ Node Observability</h2>
-      <p>Live health and resource usage for cluster nodes.</p>
-    </div>
-
-    <span
-      className={
-        metrics?.nodes?.items?.every((node) => node.ready)
-          ? "monitoring-status healthy"
-          : "monitoring-status degraded"
-      }
-    >
-      ●{" "}
-      {metrics?.nodes?.items?.every((node) => node.ready)
-        ? "All Nodes Ready"
-        : "Node Attention Required"}
-    </span>
-  </div>
-
-  {!metrics?.nodes?.items?.length ? (
-    <p>No Prometheus node information available.</p>
-  ) : (
-    <div className="node-summary-list">
-      {metrics.nodes.items.map((node) => (
-        <div
-          className="node-summary-item"
-          key={node.node}
-        >
-          <div className="node-summary-identity">
+          <div className="node-summary-header">
             <div>
-              <h3>{node.node}</h3>
-              <p>Kubernetes worker/control-plane node</p>
+              <h2>🖥️ Node Observability</h2>
+
+              <p>
+                Live health and resource usage for
+                cluster nodes.
+              </p>
             </div>
 
             <span
               className={
-                node.ready
+                metrics?.nodes?.items?.every(
+                  (node) => node.ready
+                )
                   ? "monitoring-status healthy"
                   : "monitoring-status degraded"
               }
             >
-              ● {node.status}
+              ●{" "}
+              {metrics?.nodes?.items?.every(
+                (node) => node.ready
+              )
+                ? "All Nodes Ready"
+                : "Node Attention Required"}
             </span>
           </div>
 
-          <div className="node-kpi-grid">
-            <div className="node-kpi">
-              <span>CPU Usage</span>
-              <strong>{averageCpu}%</strong>
-            </div>
-
-            <div className="node-kpi">
-              <span>Memory Usage</span>
-              <strong>{averageMemory}%</strong>
-            </div>
-
-            <div className="node-kpi">
-              <span>Running Pods</span>
-              <strong>{runningPods}</strong>
-            </div>
-
-            <div className="node-kpi">
-              <span>Prometheus</span>
-              <strong>
-                {metrics?.prometheus?.healthy_targets ?? 0}/
-                {metrics?.prometheus?.total_targets ?? 0}
-              </strong>
-            </div>
-          </div>
-
-          <div className="node-progress-section">
-            <div className="node-progress-block">
-              <div className="node-progress-heading">
-                <span>CPU</span>
-                <strong>{averageCpu}%</strong>
-              </div>
-
-              <div className="progress-track">
+          {!metrics?.nodes?.items?.length ? (
+            <p>
+              No Prometheus node information
+              available.
+            </p>
+          ) : (
+            <div className="node-summary-list">
+              {metrics.nodes.items.map((node) => (
                 <div
-                  className="progress-fill cpu-progress"
-                  style={{
-                    width: `${Math.min(averageCpu, 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
+                  className="node-summary-item"
+                  key={node.node}
+                >
+                  <div className="node-summary-identity">
+                    <div>
+                      <h3>{node.node}</h3>
 
-            <div className="node-progress-block">
-              <div className="node-progress-heading">
-                <span>Memory</span>
-                <strong>{averageMemory}%</strong>
-              </div>
+                      <p>
+                        Kubernetes
+                        worker/control-plane node
+                      </p>
+                    </div>
 
-              <div className="progress-track">
-                <div
-                  className="progress-fill memory-progress"
-                  style={{
-                    width: `${Math.min(
-                      averageMemory,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
+                    <span
+                      className={
+                        node.ready
+                          ? "monitoring-status healthy"
+                          : "monitoring-status degraded"
+                      }
+                    >
+                      ● {node.status}
+                    </span>
+                  </div>
+
+                  <div className="node-kpi-grid">
+                    <div className="node-kpi">
+                      <span>CPU Usage</span>
+                      <strong>
+                        {averageCpu}%
+                      </strong>
+                    </div>
+
+                    <div className="node-kpi">
+                      <span>Memory Usage</span>
+                      <strong>
+                        {averageMemory}%
+                      </strong>
+                    </div>
+
+                    <div className="node-kpi">
+                      <span>Running Pods</span>
+                      <strong>
+                        {runningPods}
+                      </strong>
+                    </div>
+
+                    <div className="node-kpi">
+                      <span>Prometheus</span>
+
+                      <strong>
+                        {metrics?.prometheus
+                          ?.healthy_targets ?? 0}
+                        /
+                        {metrics?.prometheus
+                          ?.total_targets ?? 0}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="node-progress-section">
+                    <div className="node-progress-block">
+                      <div className="node-progress-heading">
+                        <span>CPU</span>
+                        <strong>
+                          {averageCpu}%
+                        </strong>
+                      </div>
+
+                      <div className="progress-track">
+                        <div
+                          className="progress-fill cpu-progress"
+                          style={{
+                            width: `${Math.min(
+                              averageCpu,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="node-progress-block">
+                      <div className="node-progress-heading">
+                        <span>Memory</span>
+
+                        <strong>
+                          {averageMemory}%
+                        </strong>
+                      </div>
+
+                      <div className="progress-track">
+                        <div
+                          className="progress-fill memory-progress"
+                          style={{
+                            width: `${Math.min(
+                              averageMemory,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
-</article>
+          )}
+        </article>
 
         {aiSummary ? (
           <article className="card ai-insights-card">
             <div className="ai-insights-header">
               <div>
-                <h2>🤖 AI Operations Summary</h2>
+                <h2>
+                  🤖 AI Operations Summary
+                </h2>
 
                 <p>
                   {aiSummary.summary ||
@@ -926,7 +992,8 @@ useEffect(() => {
                 <span>Health Score</span>
 
                 <strong>
-                  {aiSummary.health_score ?? 0}/100
+                  {aiSummary.health_score ?? 0}
+                  /100
                 </strong>
               </div>
             </div>
@@ -938,7 +1005,9 @@ useEffect(() => {
                 <ul className="insight-list">
                   {(aiSummary.findings || []).map(
                     (item, index) => (
-                      <li key={`${item}-${index}`}>
+                      <li
+                        key={`${item}-${index}`}
+                      >
                         <span>●</span>
                         {item}
                       </li>
@@ -951,14 +1020,17 @@ useEffect(() => {
                 <h3>Recommendations</h3>
 
                 <ul className="insight-list recommendations-list">
-                  {(aiSummary.recommendations || []).map(
-                    (item, index) => (
-                      <li key={`${item}-${index}`}>
-                        <span>→</span>
-                        {item}
-                      </li>
-                    )
-                  )}
+                  {(
+                    aiSummary.recommendations ||
+                    []
+                  ).map((item, index) => (
+                    <li
+                      key={`${item}-${index}`}
+                    >
+                      <span>→</span>
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </section>
             </div>
@@ -966,33 +1038,37 @@ useEffect(() => {
             <div className="score-breakdown">
               <h3>Score Breakdown</h3>
 
-              {(aiSummary.score_breakdown || []).map(
-                (item) => (
-                  <div
-                    className="score-breakdown-row"
-                    key={item.category}
-                  >
-                    <div>
-                      <strong>{item.category}</strong>
-                      <p>{item.reason}</p>
-                    </div>
+              {(
+                aiSummary.score_breakdown || []
+              ).map((item) => (
+                <div
+                  className="score-breakdown-row"
+                  key={item.category}
+                >
+                  <div>
+                    <strong>
+                      {item.category}
+                    </strong>
 
-                    <span
-                      className={
-                        item.change < 0
-                          ? "score-negative"
-                          : "score-neutral"
-                      }
-                    >
-                      {item.change > 0 ? "+" : ""}
-                      {item.change}
-                    </span>
+                    <p>{item.reason}</p>
                   </div>
-                )
-              )}
+
+                  <span
+                    className={
+                      item.change < 0
+                        ? "score-negative"
+                        : "score-neutral"
+                    }
+                  >
+                    {item.change > 0 ? "+" : ""}
+                    {item.change}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            {(aiSummary.incidents || []).length > 0 && (
+            {(aiSummary.incidents || [])
+              .length > 0 && (
               <div className="ai-incidents">
                 <h3>Detected Incidents</h3>
 
@@ -1005,11 +1081,18 @@ useEffect(() => {
                       key={`${incident.title}-${index}`}
                     >
                       <div>
-                        <strong>{incident.title}</strong>
-                        <p>{incident.message}</p>
+                        <strong>
+                          {incident.title}
+                        </strong>
+
+                        <p>
+                          {incident.message}
+                        </p>
                       </div>
 
-                      <span>{incident.severity}</span>
+                      <span>
+                        {incident.severity}
+                      </span>
                     </div>
                   )
                 )}
@@ -1019,99 +1102,119 @@ useEffect(() => {
         ) : (
           <article className="card ai-insights-card">
             <h2>🤖 AI Operations Summary</h2>
-            <p>Loading AI cluster analysis...</p>
+            <p>
+              Loading AI cluster analysis...
+            </p>
           </article>
         )}
       </div>
 
+      <h2 className="dashboard-section-title">
+        Incident Center
+      </h2>
 
-<h2 className="dashboard-section-title">
-  Incident Center
-</h2>
+      <section className="incident-center">
+        <div className="incident-center-header">
+          <div>
+            <h2>🚨 Active Incidents</h2>
 
-<section className="incident-center">
-  <div className="incident-center-header">
-    <div>
-      <h2>🚨 Active Incidents</h2>
-      <p>
-        Real-time operational issues detected across the cluster.
-      </p>
-    </div>
-
-    <span
-      className={`incident-count-badge ${
-        summary.incidents.length === 0
-          ? "healthy"
-          : "critical"
-      }`}
-    >
-      {summary.incidents.length} Active
-    </span>
-  </div>
-
-  {summary.incidents.length === 0 ? (
-    <div className="incident-empty-state">
-      <div className="incident-empty-icon">✓</div>
-
-      <div>
-        <h3>No active incidents</h3>
-        <p>
-          All monitored Kubernetes resources are currently healthy.
-        </p>
-      </div>
-    </div>
-  ) : (
-    <div className="incident-grid">
-      {summary.incidents.map((incident, index) => (
-        <article
-          className={`incident-card ${
-            incident.severity?.toLowerCase() || "unknown"
-          }`}
-          key={`${incident.name}-${index}`}
-        >
-          <div className="incident-card-header">
-            <div>
-              <span className="incident-type">
-                {incident.type}
-              </span>
-
-              <h3>{incident.name}</h3>
-            </div>
-
-            <span className="incident-severity">
-              {incident.severity}
-            </span>
+            <p>
+              Real-time operational issues detected
+              across the cluster.
+            </p>
           </div>
 
-          <div className="incident-details">
-            <div>
-              <span>Namespace</span>
-              <strong>{incident.namespace}</strong>
+          <span
+            className={`incident-count-badge ${
+              summary.incidents.length === 0
+                ? "healthy"
+                : "critical"
+            }`}
+          >
+            {summary.incidents.length} Active
+          </span>
+        </div>
+
+        {summary.incidents.length === 0 ? (
+          <div className="incident-empty-state">
+            <div className="incident-empty-icon">
+              ✓
             </div>
 
             <div>
-              <span>Status</span>
-              <strong>{incident.status}</strong>
+              <h3>No active incidents</h3>
+
+              <p>
+                All monitored Kubernetes resources
+                are currently healthy.
+              </p>
             </div>
           </div>
+        ) : (
+          <div className="incident-grid">
+            {summary.incidents.map(
+              (incident, index) => (
+                <article
+                  className={`incident-card ${
+                    incident.severity?.toLowerCase() ||
+                    "unknown"
+                  }`}
+                  key={`${incident.name}-${index}`}
+                >
+                  <div className="incident-card-header">
+                    <div>
+                      <span className="incident-type">
+                        {incident.type}
+                      </span>
 
-          <p className="incident-message">
-            {incident.message}
-          </p>
+                      <h3>{incident.name}</h3>
+                    </div>
 
-          <div className="incident-action">
-            <span>Recommended action</span>
-            <strong>
-              Inspect the affected resource and review recent events.
-            </strong>
+                    <span className="incident-severity">
+                      {incident.severity}
+                    </span>
+                  </div>
+
+                  <div className="incident-details">
+                    <div>
+                      <span>Namespace</span>
+
+                      <strong>
+                        {incident.namespace}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Status</span>
+
+                      <strong>
+                        {incident.status}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <p className="incident-message">
+                    {incident.message}
+                  </p>
+
+                  <div className="incident-action">
+                    <span>
+                      Recommended action
+                    </span>
+
+                    <strong>
+                      Inspect the affected resource
+                      and review recent events.
+                    </strong>
+                  </div>
+                </article>
+              )
+            )}
           </div>
-        </article>
-      ))}
+        )}
+      </section>
     </div>
-  )}
-    </section>
-  </div>
-);
+  );
 }
 
 export default Dashboard;
