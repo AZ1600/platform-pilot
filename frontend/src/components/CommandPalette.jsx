@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -7,125 +8,171 @@ import { useNavigate } from "react-router-dom";
 
 import { getGlobalSearchData } from "../services/api";
 
-
 function normalizeItems(data = {}) {
-  const pods = Array.isArray(data.pods) ? data.pods : [];
-  const deployments = Array.isArray(data.deployments)
+  const pods = Array.isArray(data.pods)
+    ? data.pods
+    : [];
+
+  const deployments = Array.isArray(
+    data.deployments
+  )
     ? data.deployments
     : [];
-  const nodes = Array.isArray(data.nodes) ? data.nodes : [];
-  const namespaces = Array.isArray(data.namespaces)
+
+  const nodes = Array.isArray(data.nodes)
+    ? data.nodes
+    : [];
+
+  const namespaces = Array.isArray(
+    data.namespaces
+  )
     ? data.namespaces
     : [];
 
   return [
-    ...pods.map((item) => ({
-      type: "Pod",
-      icon: "🟢",
-      name:
+    ...pods.map((item) => {
+      const name =
         item.name ||
         item.pod_name ||
-        item.metadata?.name,
-      namespace:
-        item.namespace ||
-        item.metadata?.namespace,
-      status:
-        item.status ||
-        item.phase ||
-        "Unknown",
-      path: `/pods/${item.namespace}/${item.name}`,
-    })),
+        item.metadata?.name;
 
-    ...deployments.map((item) => ({
-      type: "Deployment",
-      icon: "📦",
-      name:
+      const namespace =
+        item.namespace ||
+        item.metadata?.namespace;
+
+      return {
+        type: "Pod",
+        icon: "🟢",
+        name,
+        namespace,
+        status:
+          item.status ||
+          item.phase ||
+          "Unknown",
+        path:
+          name && namespace
+            ? `/pods/${namespace}/${name}`
+            : null,
+      };
+    }),
+
+    ...deployments.map((item) => {
+      const name =
         item.name ||
         item.deployment_name ||
-        item.metadata?.name,
-      namespace:
-        item.namespace ||
-        item.metadata?.namespace,
-      status:
-        item.status ||
-        (item.ready === item.replicas
-          ? "Available"
-          : "Degraded"),
-      path: `/deployments/${item.name}`,
-    })),
+        item.metadata?.name;
 
-    ...nodes.map((item) => ({
-      type: "Node",
-      icon: "🖥️",
-      name:
+      const namespace =
+        item.namespace ||
+        item.metadata?.namespace;
+
+      return {
+        type: "Deployment",
+        icon: "📦",
+        name,
+        namespace,
+        status:
+          item.status ||
+          (item.ready === item.replicas
+            ? "Available"
+            : "Degraded"),
+        path: name
+          ? `/deployments/${name}`
+          : null,
+      };
+    }),
+
+    ...nodes.map((item) => {
+      const name =
         item.name ||
         item.node ||
         item.node_name ||
-        item.metadata?.name,
-      namespace: null,
-      status:
-        item.status ||
-        (item.ready ? "Ready" : "Not Ready"),
-      path: `/nodes/${item.name || item.node}`,
-    })),
+        item.metadata?.name;
 
-    ...namespaces.map((item) => ({
-      type: "Namespace",
-      icon: "📁",
-      name:
+      return {
+        type: "Node",
+        icon: "🖥️",
+        name,
+        namespace: null,
+        status:
+          item.status ||
+          (item.ready
+            ? "Ready"
+            : "Not Ready"),
+        path: name ? `/nodes/${name}` : null,
+      };
+    }),
+
+    ...namespaces.map((item) => {
+      const name =
         item.name ||
         item.namespace ||
-        item.metadata?.name,
-      namespace: null,
-      status: item.status || "Active",
-      path: `/namespaces/${item.name || item.namespace}`,
-    })),
-  ].filter((item) => Boolean(item.name));
-}
+        item.metadata?.name;
 
+      return {
+        type: "Namespace",
+        icon: "📁",
+        name,
+        namespace: null,
+        status: item.status || "Active",
+        path: name
+          ? `/namespaces/${name}`
+          : null,
+      };
+    }),
+  ].filter((item) =>
+    Boolean(item.name && item.path)
+  );
+}
 
 function CommandPalette({ open, onClose }) {
   const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [loading, setLoading] =
+    useState(false);
 
+  const [
+    selectedIndex,
+    setSelectedIndex,
+  ] = useState(0);
 
   useEffect(() => {
     if (!open) {
-      return;
+      return undefined;
     }
+
+    let cancelled = false;
 
     async function loadSearchData() {
       try {
         setLoading(true);
 
-        const data = await getGlobalSearchData();
+        const data =
+          await getGlobalSearchData();
 
-        setItems(normalizeItems(data));
+        if (!cancelled) {
+          setItems(normalizeItems(data));
+        }
       } catch (error) {
         console.error(
           "Command palette loading error:",
           error
         );
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    loadSearchData();
+    void loadSearchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
-
-
-  useEffect(() => {
-    if (open) {
-      setQuery("");
-      setSelectedIndex(0);
-    }
-  }, [open]);
-
 
   const results = useMemo(() => {
     const normalizedQuery = query
@@ -155,28 +202,24 @@ function CommandPalette({ open, onClose }) {
       .slice(0, 10);
   }, [items, query]);
 
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
-
-
-  function openResult(item) {
-    if (!item) {
-      return;
-    }
-
-    navigate(item.path);
-    onClose();
-  }
-
-
-  useEffect(() => {
-    function handleKeyboard(event) {
-      if (!open) {
+  const openResult = useCallback(
+    (item) => {
+      if (!item?.path) {
         return;
       }
 
+      navigate(item.path);
+      onClose();
+    },
+    [navigate, onClose]
+  );
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    function handleKeyboard(event) {
       if (event.key === "Escape") {
         onClose();
         return;
@@ -188,7 +231,10 @@ function CommandPalette({ open, onClose }) {
         setSelectedIndex((current) =>
           Math.min(
             current + 1,
-            Math.max(results.length - 1, 0)
+            Math.max(
+              results.length - 1,
+              0
+            )
           )
         );
 
@@ -208,7 +254,9 @@ function CommandPalette({ open, onClose }) {
       if (event.key === "Enter") {
         event.preventDefault();
 
-        openResult(results[selectedIndex]);
+        openResult(
+          results[selectedIndex]
+        );
       }
     }
 
@@ -226,15 +274,14 @@ function CommandPalette({ open, onClose }) {
   }, [
     open,
     onClose,
+    openResult,
     results,
     selectedIndex,
   ]);
 
-
   if (!open) {
     return null;
   }
-
 
   return (
     <div
@@ -249,10 +296,13 @@ function CommandPalette({ open, onClose }) {
       >
         <div className="command-header">
           <div>
-            <h2>🔍 Search PlatformPilot</h2>
+            <h2>
+              🔍 Search PlatformPilot
+            </h2>
+
             <p>
-              Search Pods, Deployments, Nodes,
-              and Namespaces
+              Search Pods, Deployments,
+              Nodes, and Namespaces
             </p>
           </div>
 
@@ -266,9 +316,10 @@ function CommandPalette({ open, onClose }) {
           placeholder="Search cluster resources..."
           className="command-input"
           value={query}
-          onChange={(event) =>
-            setQuery(event.target.value)
-          }
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setSelectedIndex(0);
+          }}
         />
 
         <div className="command-results">
@@ -281,50 +332,62 @@ function CommandPalette({ open, onClose }) {
               No resources found.
             </p>
           ) : (
-            results.map((item, index) => (
-              <button
-                type="button"
-                className={`command-result ${
-                  index === selectedIndex
-                    ? "selected"
-                    : ""
-                }`}
-                key={`${item.type}-${item.name}-${index}`}
-                onMouseEnter={() =>
-                  setSelectedIndex(index)
-                }
-                onClick={() =>
-                  openResult(item)
-                }
-              >
-                <div className="command-result-main">
-                  <span className="command-result-icon">
-                    {item.icon}
-                  </span>
-
-                  <div>
-                    <strong>{item.name}</strong>
-
-                    <p>
-                      {item.type}
-                      {item.namespace
-                        ? ` · ${item.namespace}`
-                        : ""}
-                    </p>
-                  </div>
-                </div>
-
-                <span
-                  className={`search-result-status ${
-                    item.status
-                      ?.toLowerCase()
-                      .replaceAll(" ", "-") || ""
+            results.map(
+              (item, index) => (
+                <button
+                  type="button"
+                  className={`command-result ${
+                    index ===
+                    selectedIndex
+                      ? "selected"
+                      : ""
                   }`}
+                  key={`${item.type}-${item.name}-${index}`}
+                  onMouseEnter={() =>
+                    setSelectedIndex(
+                      index
+                    )
+                  }
+                  onClick={() =>
+                    openResult(item)
+                  }
                 >
-                  {item.status || "Unknown"}
-                </span>
-              </button>
-            ))
+                  <div className="command-result-main">
+                    <span className="command-result-icon">
+                      {item.icon}
+                    </span>
+
+                    <div>
+                      <strong>
+                        {item.name}
+                      </strong>
+
+                      <p>
+                        {item.type}
+
+                        {item.namespace
+                          ? ` · ${item.namespace}`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`search-result-status ${
+                      item.status
+                        ?.toLowerCase()
+                        .replaceAll(
+                          " ",
+                          "-"
+                        ) || ""
+                    }`}
+                  >
+                    {item.status ||
+                      "Unknown"}
+                  </span>
+                </button>
+              )
+            )
           )}
         </div>
 
@@ -337,6 +400,5 @@ function CommandPalette({ open, onClose }) {
     </div>
   );
 }
-
 
 export default CommandPalette;

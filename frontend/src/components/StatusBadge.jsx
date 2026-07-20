@@ -1,5 +1,5 @@
 function StatusBadge({ status }) {
-  let color = "#22c55e";
+let color;
 
   switch (status) {
     case "Running":

@@ -1,4 +1,5 @@
 from routers.ai import router as ai_router
+from routers.cloudops import router as cloudops_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -51,6 +52,7 @@ app.add_middleware(
 # GET /metrics/pods/namespaces
 app.include_router(metrics_router)
 app.include_router(ai_router)
+app.include_router(cloudops_router)
 
 
 @app.get("/")

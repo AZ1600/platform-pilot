@@ -1,0 +1,17 @@
+# Local Docker Desktop monitoring overrides.
+#
+# Docker Desktop binds these control-plane metrics endpoints to 127.0.0.1.
+# Prometheus cannot scrape them through the Kubernetes node IP, so they are
+# disabled locally to prevent false "target unavailable" incidents.
+
+kubeControllerManager:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
