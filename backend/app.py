@@ -121,14 +121,20 @@ def recent_events():
     return list_recent_events()
 
 
-@app.get("/events/{pod_name}")
-def events(pod_name: str):
-    return get_pod_events(pod_name)
+@app.get("/events/{namespace}/{pod_name}")
+def events(namespace: str, pod_name: str):
+    return get_pod_events(
+        pod_name,
+        namespace,
+    )
 
 
-@app.get("/logs/{pod_name}")
-def logs(pod_name: str):
-    return get_pod_logs(pod_name)
+@app.get("/logs/{namespace}/{pod_name}")
+def logs(namespace: str, pod_name: str):
+    return get_pod_logs(
+        pod_name,
+        namespace,
+    )
 
 
 @app.get("/risks")

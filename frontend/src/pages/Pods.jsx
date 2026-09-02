@@ -92,9 +92,15 @@ function Pods() {
 
           <tbody>
             {filteredPods.map((pod) => (
-              <tr key={pod.name}>
+              <tr key={`${pod.namespace}/${pod.name}`}>
                 <td>
-                  <Link to={`/pods/${pod.name}`}>{pod.name}</Link>
+                  <Link
+                    to={`/pods/${encodeURIComponent(
+                      pod.namespace
+                    )}/${encodeURIComponent(pod.name)}`}
+                  >
+                    {pod.name}
+                  </Link>
                 </td>
 
                 <td>{pod.namespace}</td>

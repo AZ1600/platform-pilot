@@ -86,7 +86,13 @@ function DeploymentDetails() {
               {pods.map((pod) => (
                 <tr key={pod}>
                   <td>
-                    <Link to={`/pods/${pod}`}>{pod}</Link>
+                   <Link
+                     to={`/pods/${encodeURIComponent(
+                       deployment.namespace
+                     )}/${encodeURIComponent(pod)}`}
+                   >
+                     {pod}
+                   </Link>
                   </td>
                 </tr>
               ))}

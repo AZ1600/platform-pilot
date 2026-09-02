@@ -55,7 +55,7 @@ function App() {
 
         <Route path="/pods" element={<Pods />} />
         <Route
-          path="/pods/:podName"
+          path="/pods/:namespace/:podName"
           element={<PodDetails />}
         />
 
