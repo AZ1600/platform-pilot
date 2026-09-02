@@ -1,4 +1,8 @@
-const API_URL = "http://127.0.0.1:8000";
+const DEFAULT_API_URL = "http://127.0.0.1:8000";
+
+const API_URL = (
+  import.meta.env.VITE_API_URL || DEFAULT_API_URL
+).replace(/\/+$/, "");
 
 export async function getDashboard() {
   const res = await fetch(`${API_URL}/dashboard`);
@@ -76,9 +80,7 @@ export async function getPodLogs(namespace, podName) {
   return res.json();
 }
 export async function getPrometheusHealth() {
-  const response = await fetch(
-    "http://127.0.0.1:8000/metrics/health"
-  );
+  const response = await fetch(`${API_URL}/metrics/health`);
 
   if (!response.ok) {
     throw new Error("Unable to load Prometheus health.");
@@ -88,9 +90,7 @@ export async function getPrometheusHealth() {
 }
 
 export async function getPrometheusPodMetrics() {
-  const response = await fetch(
-    "http://127.0.0.1:8000/metrics/pods"
-  );
+  const response = await fetch(`${API_URL}/metrics/pods`);
 
   if (!response.ok) {
     throw new Error("Unable to load Prometheus pod metrics.");
@@ -100,9 +100,7 @@ export async function getPrometheusPodMetrics() {
 }
 
 export async function getPrometheusClusterMetrics() {
-  const response = await fetch(
-    "http://127.0.0.1:8000/metrics/cluster"
-  );
+  const response = await fetch(`${API_URL}/metrics/cluster`);
 
   if (!response.ok) {
     throw new Error("Unable to load Prometheus cluster metrics.");
@@ -112,9 +110,7 @@ export async function getPrometheusClusterMetrics() {
 }
 
 export async function getPrometheusNamespaceMetrics() {
-  const response = await fetch(
-    "http://127.0.0.1:8000/metrics/pods/namespaces"
-  );
+  const response = await fetch(`${API_URL}/metrics/pods/namespaces`);
 
   if (!response.ok) {
     throw new Error("Unable to load namespace metrics.");
@@ -124,9 +120,7 @@ export async function getPrometheusNamespaceMetrics() {
 }
 
 export async function getAiSummary() {
-  const response = await fetch(
-    "http://127.0.0.1:8000/ai/summary"
-  );
+  const response = await fetch(`${API_URL}/ai/summary`);
 
   if (!response.ok) {
     throw new Error("Unable to load AI cluster summary.");

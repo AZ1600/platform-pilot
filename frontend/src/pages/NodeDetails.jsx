@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import StatusBadge from "../components/StatusBadge";
+import { getNode } from "../services/api";
 
 function NodeDetails() {
   const { nodeName } = useParams();
@@ -8,9 +9,7 @@ function NodeDetails() {
   const [node, setNode] = useState(null);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/nodes/${nodeName}`)
-      .then((r) => r.json())
-      .then(setNode);
+    getNode(nodeName).then(setNode);
   }, [nodeName]);
 
   if (!node) {
