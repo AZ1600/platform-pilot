@@ -4,129 +4,135 @@ const API_URL = (
   import.meta.env.VITE_API_URL || DEFAULT_API_URL
 ).replace(/\/+$/, "");
 
+async function apiRequest(path, errorMessage) {
+  const response = await fetch(`${API_URL}${path}`);
+
+  if (!response.ok) {
+    throw new Error(
+      `${errorMessage} (HTTP ${response.status})`
+    );
+  }
+
+  return response.json();
+}
+
 export async function getDashboard() {
-  const res = await fetch(`${API_URL}/dashboard`);
-  return res.json();
+  return apiRequest(
+    "/dashboard",
+    "Unable to load dashboard."
+  );
 }
 
 export async function getClusterSummary() {
-  const res = await fetch(`${API_URL}/cluster-summary`);
-  return res.json();
+  return apiRequest(
+    "/cluster-summary",
+    "Unable to load cluster summary."
+  );
 }
 
 export async function getPods() {
-  const res = await fetch(`${API_URL}/pods`);
-  return res.json();
+  return apiRequest(
+    "/pods",
+    "Unable to load pods."
+  );
 }
 
 export async function getPod(namespace, podName) {
-  const res = await fetch(
-    `${API_URL}/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`
+  return apiRequest(
+    `/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`,
+    "Unable to load pod."
   );
-  return res.json();
 }
 
 export async function getPodAnalysis(namespace, podName) {
-  const res = await fetch(
-    `${API_URL}/analysis/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`
+  return apiRequest(
+    `/analysis/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`,
+    "Unable to load pod analysis."
   );
-
-  if (!res.ok) {
-    throw new Error(`Pod request failed: ${res.status}`);
-  }
-
-  return res.json();
 }
 
 export async function getDeployments() {
-  const res = await fetch(`${API_URL}/deployments`);
-  return res.json();
+  return apiRequest(
+    "/deployments",
+    "Unable to load deployments."
+  );
 }
 
 export async function getDeployment(name) {
-  const res = await fetch(`${API_URL}/deployments/${name}`);
-  return res.json();
+  return apiRequest(
+    `/deployments/${encodeURIComponent(name)}`,
+    "Unable to load deployment."
+  );
 }
 
 export async function getNodes() {
-  const res = await fetch(`${API_URL}/nodes`);
-  return res.json();
+  return apiRequest(
+    "/nodes",
+    "Unable to load nodes."
+  );
 }
 
 export async function getNode(name) {
-  const res = await fetch(`${API_URL}/nodes/${name}`);
-  return res.json();
+  return apiRequest(
+    `/nodes/${encodeURIComponent(name)}`,
+    "Unable to load node."
+  );
 }
 
 export async function getNamespaces() {
-  const res = await fetch(`${API_URL}/namespaces`);
-  return res.json();
+  return apiRequest(
+    "/namespaces",
+    "Unable to load namespaces."
+  );
 }
 
 export async function getNamespace(name) {
-  const res = await fetch(`${API_URL}/namespaces/${name}`);
-  return res.json();
+  return apiRequest(
+    `/namespaces/${encodeURIComponent(name)}`,
+    "Unable to load namespace."
+  );
 }
 
 export async function getPodLogs(namespace, podName) {
-  const res = await fetch(
-    `${API_URL}/logs/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`
+  return apiRequest(
+    `/logs/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`,
+    "Unable to load pod logs."
   );
-
-  if (!res.ok) {
-    throw new Error(`Logs request failed: ${res.status}`);
-  }
-
-  return res.json();
 }
+
 export async function getPrometheusHealth() {
-  const response = await fetch(`${API_URL}/metrics/health`);
-
-  if (!response.ok) {
-    throw new Error("Unable to load Prometheus health.");
-  }
-
-  return response.json();
+  return apiRequest(
+    "/metrics/health",
+    "Unable to load Prometheus health."
+  );
 }
 
 export async function getPrometheusPodMetrics() {
-  const response = await fetch(`${API_URL}/metrics/pods`);
-
-  if (!response.ok) {
-    throw new Error("Unable to load Prometheus pod metrics.");
-  }
-
-  return response.json();
+  return apiRequest(
+    "/metrics/pods",
+    "Unable to load Prometheus pod metrics."
+  );
 }
 
 export async function getPrometheusClusterMetrics() {
-  const response = await fetch(`${API_URL}/metrics/cluster`);
-
-  if (!response.ok) {
-    throw new Error("Unable to load Prometheus cluster metrics.");
-  }
-
-  return response.json();
+  return apiRequest(
+    "/metrics/cluster",
+    "Unable to load Prometheus cluster metrics."
+  );
 }
 
 export async function getPrometheusNamespaceMetrics() {
-  const response = await fetch(`${API_URL}/metrics/pods/namespaces`);
-
-  if (!response.ok) {
-    throw new Error("Unable to load namespace metrics.");
-  }
-
-  return response.json();
+  return apiRequest(
+    "/metrics/pods/namespaces",
+    "Unable to load namespace metrics."
+  );
 }
 
 export async function getAiSummary() {
-  const response = await fetch(`${API_URL}/ai/summary`);
-
-  if (!response.ok) {
-    throw new Error("Unable to load AI cluster summary.");
-  }
-
-  return response.json();
+  return apiRequest(
+    "/ai/summary",
+    "Unable to load AI cluster summary."
+  );
 }
 
 export async function getGlobalSearchData() {
