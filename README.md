@@ -227,10 +227,14 @@ http://localhost:8000
 ```bash
 cd frontend
 
+cp .env.example .env
+
 npm install
 
 npm run dev
 ```
+
+The frontend uses `http://127.0.0.1:8000` by default. To use a backend at a different address, set `VITE_API_URL` in `frontend/.env`.
 
 Frontend:
 
