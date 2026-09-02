@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+
 import StatusBadge from "../components/StatusBadge";
 import { getNode } from "../services/api";
 
@@ -7,10 +8,31 @@ function NodeDetails() {
   const { nodeName } = useParams();
 
   const [node, setNode] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    getNode(nodeName).then(setNode);
+    async function load() {
+      try {
+        const data = await getNode(nodeName);
+        setNode(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+
+    load();
   }, [nodeName]);
+
+  if (error) {
+    return (
+      <div className="container">
+        <div className="card">
+          <h2>{error}</h2>
+        </div>
+      </div>
+    );
+  }
 
   if (!node) {
     return (
@@ -24,66 +46,80 @@ function NodeDetails() {
 
   return (
     <div className="container">
-
       <div className="card">
         <h1>🖥️ {node.name}</h1>
 
         <table className="resource-table">
           <tbody>
-
             <tr>
-              <td><strong>Status</strong></td>
+              <td>
+                <strong>Status</strong>
+              </td>
               <td>
                 <StatusBadge status={node.status} />
               </td>
             </tr>
 
             <tr>
-              <td><strong>Kubernetes Version</strong></td>
+              <td>
+                <strong>Kubernetes Version</strong>
+              </td>
               <td>{node.kubelet_version}</td>
             </tr>
 
             <tr>
-              <td><strong>Operating System</strong></td>
+              <td>
+                <strong>Operating System</strong>
+              </td>
               <td>{node.os}</td>
             </tr>
 
             <tr>
-              <td><strong>Architecture</strong></td>
+              <td>
+                <strong>Architecture</strong>
+              </td>
               <td>{node.architecture}</td>
             </tr>
 
             <tr>
-              <td><strong>Kernel</strong></td>
+              <td>
+                <strong>Kernel</strong>
+              </td>
               <td>{node.kernel_version}</td>
             </tr>
 
             <tr>
-              <td><strong>Container Runtime</strong></td>
+              <td>
+                <strong>Container Runtime</strong>
+              </td>
               <td>{node.container_runtime}</td>
             </tr>
 
             <tr>
-              <td><strong>CPU Capacity</strong></td>
+              <td>
+                <strong>CPU Capacity</strong>
+              </td>
               <td>{node.capacity.cpu}</td>
             </tr>
 
             <tr>
-              <td><strong>Memory</strong></td>
+              <td>
+                <strong>Memory</strong>
+              </td>
               <td>{node.capacity.memory}</td>
             </tr>
 
             <tr>
-              <td><strong>Pod Capacity</strong></td>
+              <td>
+                <strong>Pod Capacity</strong>
+              </td>
               <td>{node.capacity.pods}</td>
             </tr>
-
           </tbody>
         </table>
       </div>
 
       <div className="card">
-
         <h2>🤖 AI Node Analysis</h2>
 
         <p>
@@ -92,21 +128,21 @@ function NodeDetails() {
         </p>
 
         <p>
-          <strong>Root Cause:</strong><br />
+          <strong>Root Cause:</strong>
+          <br />
           {node.analysis.root_cause}
         </p>
 
         <p>
-          <strong>Recommendation:</strong><br />
+          <strong>Recommendation:</strong>
+          <br />
           {node.analysis.recommendation}
         </p>
 
         <p>
           <strong>Owner:</strong> {node.analysis.owner}
         </p>
-
       </div>
-
     </div>
   );
 }
