@@ -12,8 +12,19 @@ spec:
       labels:
         app: platformpilot-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: platformpilot-api
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: platformpilot-api:latest
           imagePullPolicy: IfNotPresent
           ports:
