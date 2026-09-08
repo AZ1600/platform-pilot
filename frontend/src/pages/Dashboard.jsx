@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 import {
   Area,
@@ -166,6 +164,14 @@ function Dashboard() {
     try {
       setExporting(true);
       setError(null);
+
+      const [
+        { default: html2canvas },
+        { default: jsPDF },
+      ] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
 
       const canvas = await html2canvas(dashboardElement, {
         scale: 2,
