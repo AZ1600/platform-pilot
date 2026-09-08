@@ -2,12 +2,13 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from core.config import (
     KUBERNETES_CLUSTER_NAME,
     PLATFORM_ENVIRONMENT,
 )
+from core.security import Principal, require_role
 from services.ai_service import generate_cluster_summary
 from services.cloudops_export_service import export_incident
 
@@ -39,7 +40,11 @@ def new_finding_id() -> str:
 
 
 @router.post("/findings")
-def export_findings() -> dict[str, Any]:
+def export_findings(
+    _principal: Principal = Depends(
+        require_role("operator")
+    ),
+) -> dict[str, Any]:
     """
     Analyze the cluster and export every detected incident to CloudOps.
     """
