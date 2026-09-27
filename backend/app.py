@@ -1,9 +1,12 @@
-from routers.ai import router as ai_router
-from routers.cloudops import router as cloudops_router
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ai import analyze_pod
+from core.security import (
+    Principal,
+    authenticate_request,
+    require_role,
+)
 from kubernetes_client import (
     get_deployment_details,
     get_namespace_details,
@@ -18,6 +21,8 @@ from kubernetes_client import (
     list_pods,
     list_recent_events,
 )
+from routers.ai import router as ai_router
+from routers.cloudops import router as cloudops_router
 from routers.metrics import router as metrics_router
 
 
@@ -25,7 +30,8 @@ app = FastAPI(
     title="PlatformPilot API",
     version="2.0.0",
     description=(
-        "AI-assisted Kubernetes operations and observability API."
+        "AI-assisted Kubernetes operations "
+        "and observability API."
     ),
 )
 
@@ -44,12 +50,33 @@ app.add_middleware(
 )
 
 
-# Register the Prometheus metrics routes.
+# Public endpoints:
 #
-# This adds:
-# GET /metrics/health
-# GET /metrics/pods
-# GET /metrics/pods/namespaces
+# GET /
+# GET /health
+#
+# Authenticated endpoint:
+#
+# GET /auth/me
+#
+# Viewer-or-higher access:
+#
+# Kubernetes resources
+# cluster health
+# events
+# logs
+# analysis
+# dashboard data
+#
+# Operator-or-higher access is enforced separately by:
+#
+# POST /cloudops/findings
+
+VIEWER_ACCESS = [
+    Depends(require_role("viewer")),
+]
+
+
 app.include_router(metrics_router)
 app.include_router(ai_router)
 app.include_router(cloudops_router)
@@ -66,12 +93,12 @@ def root():
 @app.get("/health")
 def health():
     """
-    Check whether the PlatformPilot FastAPI application is running.
+    Public application health endpoint.
 
-    This endpoint checks the application itself.
+    This verifies that the PlatformPilot FastAPI
+    application itself is running.
 
-    Prometheus health is checked separately through:
-    GET /metrics/health
+    Authentication is intentionally not required.
     """
 
     return {
@@ -81,70 +108,144 @@ def health():
     }
 
 
-@app.get("/pods")
+@app.get("/auth/me")
+def auth_me(
+    principal: Principal = Depends(
+        authenticate_request
+    ),
+):
+    """
+    Return the authenticated PlatformPilot principal.
+
+    This endpoint does not depend on Kubernetes or
+    Prometheus and can therefore be used to validate
+    authentication independently from infrastructure
+    connectivity.
+    """
+
+    return {
+        "authenticated": True,
+        "role": principal.role,
+    }
+
+
+@app.get(
+    "/pods",
+    dependencies=VIEWER_ACCESS,
+)
 def get_pods():
     return list_all_pods()
 
 
-@app.get("/deployments")
+@app.get(
+    "/deployments",
+    dependencies=VIEWER_ACCESS,
+)
 def get_deployments():
     return list_all_deployments()
 
 
-@app.get("/deployments/{deployment_name}")
-def deployment_details(deployment_name: str):
-    return get_deployment_details(deployment_name)
+@app.get(
+    "/deployments/{deployment_name}",
+    dependencies=VIEWER_ACCESS,
+)
+def deployment_details(
+    deployment_name: str,
+):
+    return get_deployment_details(
+        deployment_name
+    )
 
 
-@app.get("/nodes")
+@app.get(
+    "/nodes",
+    dependencies=VIEWER_ACCESS,
+)
 def nodes():
     return list_nodes()
 
 
-@app.get("/nodes/{node_name}")
-def node_details(node_name: str):
-    return get_node_details(node_name)
+@app.get(
+    "/nodes/{node_name}",
+    dependencies=VIEWER_ACCESS,
+)
+def node_details(
+    node_name: str,
+):
+    return get_node_details(
+        node_name
+    )
 
 
-@app.get("/namespaces")
+@app.get(
+    "/namespaces",
+    dependencies=VIEWER_ACCESS,
+)
 def namespaces():
     return list_namespaces()
 
 
-@app.get("/namespaces/{namespace_name}")
-def namespace_details(namespace_name: str):
-    return get_namespace_details(namespace_name)
+@app.get(
+    "/namespaces/{namespace_name}",
+    dependencies=VIEWER_ACCESS,
+)
+def namespace_details(
+    namespace_name: str,
+):
+    return get_namespace_details(
+        namespace_name
+    )
 
 
-@app.get("/events/recent")
+@app.get(
+    "/events/recent",
+    dependencies=VIEWER_ACCESS,
+)
 def recent_events():
     return list_recent_events()
 
 
-@app.get("/events/{namespace}/{pod_name}")
-def events(namespace: str, pod_name: str):
+@app.get(
+    "/events/{namespace}/{pod_name}",
+    dependencies=VIEWER_ACCESS,
+)
+def events(
+    namespace: str,
+    pod_name: str,
+):
     return get_pod_events(
         pod_name,
         namespace,
     )
 
 
-@app.get("/logs/{namespace}/{pod_name}")
-def logs(namespace: str, pod_name: str):
+@app.get(
+    "/logs/{namespace}/{pod_name}",
+    dependencies=VIEWER_ACCESS,
+)
+def logs(
+    namespace: str,
+    pod_name: str,
+):
     return get_pod_logs(
         pod_name,
         namespace,
     )
 
 
-@app.get("/risks")
+@app.get(
+    "/risks",
+    dependencies=VIEWER_ACCESS,
+)
 def risks():
     pods = list_pods()
     results = []
 
     for pod in pods:
         if pod["status"] != "Running":
-            analysis = analyze_pod(pod)
+            analysis = analyze_pod(
+                pod
+            )
 
             results.append(
                 {
@@ -160,16 +261,43 @@ def risks():
     }
 
 
-@app.get("/analysis")
+@app.get(
+    "/analysis",
+    dependencies=VIEWER_ACCESS,
+)
 def analysis():
     pods = list_pods()
     results = []
 
     for pod in pods:
         if pod["status"] != "Running":
-            events = get_pod_events(pod["name"])
-            logs = get_pod_logs(pod["name"])
-            recommendation = analyze_pod(pod)
+            pod_name = pod["name"]
+            namespace = pod.get(
+                "namespace"
+            )
+
+            if namespace:
+                events = get_pod_events(
+                    pod_name,
+                    namespace,
+                )
+
+                logs = get_pod_logs(
+                    pod_name,
+                    namespace,
+                )
+            else:
+                events = get_pod_events(
+                    pod_name
+                )
+
+                logs = get_pod_logs(
+                    pod_name
+                )
+
+            recommendation = analyze_pod(
+                pod
+            )
 
             results.append(
                 {
@@ -187,8 +315,14 @@ def analysis():
     }
 
 
-@app.get("/analysis/{namespace}/{pod_name}")
-def pod_analysis(namespace: str, pod_name: str):
+@app.get(
+    "/analysis/{namespace}/{pod_name}",
+    dependencies=VIEWER_ACCESS,
+)
+def pod_analysis(
+    namespace: str,
+    pod_name: str,
+):
     pods = list_all_pods()
 
     pod = next(
@@ -196,8 +330,10 @@ def pod_analysis(namespace: str, pod_name: str):
             pod
             for pod in pods
             if (
-                pod["name"] == pod_name
-                and pod["namespace"] == namespace
+                pod["name"]
+                == pod_name
+                and pod["namespace"]
+                == namespace
             )
         ),
         None,
@@ -218,7 +354,9 @@ def pod_analysis(namespace: str, pod_name: str):
         namespace,
     )
 
-    recommendation = analyze_pod(pod)
+    recommendation = analyze_pod(
+        pod
+    )
 
     return {
         "pod": pod,
@@ -228,7 +366,10 @@ def pod_analysis(namespace: str, pod_name: str):
     }
 
 
-@app.get("/cluster-summary")
+@app.get(
+    "/cluster-summary",
+    dependencies=VIEWER_ACCESS,
+)
 def cluster_summary():
     pods = list_all_pods()
     deployments = list_all_deployments()
@@ -242,18 +383,23 @@ def cluster_summary():
         if pod["status"] == "Running"
     )
 
-    failed_pods = len(pods) - running_pods
+    failed_pods = (
+        len(pods) - running_pods
+    )
 
     healthy_deployments = sum(
         1
         for deployment in deployments
-        if deployment["replicas"]
-        == deployment["ready"]
-        == deployment["available"]
+        if (
+            deployment["replicas"]
+            == deployment["ready"]
+            == deployment["available"]
+        )
     )
 
     degraded_deployments = (
-        len(deployments) - healthy_deployments
+        len(deployments)
+        - healthy_deployments
     )
 
     ready_nodes = sum(
@@ -262,12 +408,15 @@ def cluster_summary():
         if node["status"] == "Ready"
     )
 
-    unhealthy_nodes = len(nodes) - ready_nodes
+    unhealthy_nodes = (
+        len(nodes) - ready_nodes
+    )
 
     active_namespaces = sum(
         1
         for namespace in namespaces
-        if namespace["status"] == "Active"
+        if namespace["status"]
+        == "Active"
     )
 
     incidents = []
@@ -278,12 +427,14 @@ def cluster_summary():
                 {
                     "type": "Pod",
                     "name": pod["name"],
-                    "namespace": pod["namespace"],
-                    "status": pod["status"],
+                    "namespace":
+                        pod["namespace"],
+                    "status":
+                        pod["status"],
                     "severity": "High",
                     "message": (
-                        f"Pod {pod['name']} is "
-                        f"{pod['status']}"
+                        f"Pod {pod['name']} "
+                        f"is {pod['status']}"
                     ),
                 }
             )
@@ -299,29 +450,57 @@ def cluster_summary():
             incidents.append(
                 {
                     "type": "Deployment",
-                    "name": deployment["name"],
-                    "namespace": deployment["namespace"],
-                    "status": "Degraded",
-                    "severity": "High",
+                    "name":
+                        deployment["name"],
+                    "namespace":
+                        deployment[
+                            "namespace"
+                        ],
+                    "status":
+                        "Degraded",
+                    "severity":
+                        "High",
                     "message": (
-                        f"Deployment {deployment['name']} "
-                        "does not have all replicas ready."
+                        f"Deployment "
+                        f"{deployment['name']} "
+                        "does not have all "
+                        "replicas ready."
                     ),
                 }
             )
 
     health_score = 100
-    health_score -= failed_pods * 15
-    health_score -= degraded_deployments * 20
-    health_score -= unhealthy_nodes * 25
-    health_score = max(0, health_score)
+
+    health_score -= (
+        failed_pods * 15
+    )
+
+    health_score -= (
+        degraded_deployments * 20
+    )
+
+    health_score -= (
+        unhealthy_nodes * 25
+    )
+
+    health_score = max(
+        0,
+        health_score,
+    )
 
     if health_score >= 90:
-        summary = "Cluster is healthy."
+        summary = (
+            "Cluster is healthy."
+        )
     elif health_score >= 70:
-        summary = "Cluster health is degraded."
+        summary = (
+            "Cluster health is degraded."
+        )
     else:
-        summary = "Cluster requires immediate attention."
+        summary = (
+            "Cluster requires immediate "
+            "attention."
+        )
 
     recommendations = []
 
@@ -357,34 +536,53 @@ def cluster_summary():
     )
 
     return {
-        "health_score": health_score,
-        "summary": summary,
+        "health_score":
+            health_score,
+        "summary":
+            summary,
         "pods": {
-            "total": len(pods),
-            "running": running_pods,
-            "failed": failed_pods,
+            "total":
+                len(pods),
+            "running":
+                running_pods,
+            "failed":
+                failed_pods,
         },
         "deployments": {
-            "total": len(deployments),
-            "healthy": healthy_deployments,
-            "degraded": degraded_deployments,
+            "total":
+                len(deployments),
+            "healthy":
+                healthy_deployments,
+            "degraded":
+                degraded_deployments,
         },
         "nodes": {
-            "total": len(nodes),
-            "ready": ready_nodes,
-            "unhealthy": unhealthy_nodes,
+            "total":
+                len(nodes),
+            "ready":
+                ready_nodes,
+            "unhealthy":
+                unhealthy_nodes,
         },
         "namespaces": {
-            "total": len(namespaces),
-            "active": active_namespaces,
+            "total":
+                len(namespaces),
+            "active":
+                active_namespaces,
         },
-        "incidents": incidents,
-        "recent_events": events,
-        "recommendations": recommendations,
+        "incidents":
+            incidents,
+        "recent_events":
+            events,
+        "recommendations":
+            recommendations,
     }
 
 
-@app.get("/dashboard")
+@app.get(
+    "/dashboard",
+    dependencies=VIEWER_ACCESS,
+)
 def dashboard():
     pods = list_pods()
     deployments = list_deployments()
@@ -393,16 +591,40 @@ def dashboard():
 
     for pod in pods:
         if pod["status"] != "Running":
+            pod_name = pod["name"]
+            namespace = pod.get(
+                "namespace"
+            )
+
+            if namespace:
+                events = get_pod_events(
+                    pod_name,
+                    namespace,
+                )
+
+                logs = get_pod_logs(
+                    pod_name,
+                    namespace,
+                )
+            else:
+                events = get_pod_events(
+                    pod_name
+                )
+
+                logs = get_pod_logs(
+                    pod_name
+                )
+
             incidents.append(
                 {
                     **pod,
-                    **analyze_pod(pod),
-                    "events": get_pod_events(
-                        pod["name"]
+                    **analyze_pod(
+                        pod
                     ),
-                    "logs": get_pod_logs(
-                        pod["name"]
-                    ),
+                    "events":
+                        events,
+                    "logs":
+                        logs,
                 }
             )
 
@@ -412,8 +634,12 @@ def dashboard():
             if len(incidents) == 0
             else "Warning"
         ),
-        "pods": len(pods),
-        "deployments": len(deployments),
-        "active_risks": len(incidents),
-        "incidents": incidents,
+        "pods":
+            len(pods),
+        "deployments":
+            len(deployments),
+        "active_risks":
+            len(incidents),
+        "incidents":
+            incidents,
     }

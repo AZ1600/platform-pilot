@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+
+import ApiAccess from "./ApiAccess";
 import GlobalSearch from "./GlobalSearch";
 
 function Navbar() {
@@ -12,10 +14,18 @@ function Navbar() {
         <nav className="nav-links">
           <Link to="/">Dashboard</Link>
           <Link to="/pods">Pods</Link>
-          <Link to="/deployments">Deployments</Link>
+          <Link to="/deployments">
+            Deployments
+          </Link>
           <Link to="/nodes">Nodes</Link>
-          <Link to="/namespaces">Namespaces</Link>
-          <Link to="/ai-summary">AI Summary</Link>
+          <Link to="/namespaces">
+            Namespaces
+          </Link>
+          <Link to="/ai-summary">
+            AI Summary
+          </Link>
+
+          <ApiAccess />
         </nav>
       </div>
     </header>

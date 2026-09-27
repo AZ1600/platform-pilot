@@ -1,5 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 
+from core.security import require_role
 from services.ai_service import generate_cluster_summary
 from services.prometheus_service import (
     PrometheusConnectionError,
@@ -10,6 +16,9 @@ from services.prometheus_service import (
 router = APIRouter(
     prefix="/ai",
     tags=["AI Insights"],
+    dependencies=[
+        Depends(require_role("viewer")),
+    ],
 )
 
 
@@ -33,5 +42,8 @@ def ai_summary():
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="PlatformPilot could not generate the AI cluster summary.",
+            detail=(
+                "PlatformPilot could not generate "
+                "the AI cluster summary."
+            ),
         ) from exc
