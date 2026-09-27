@@ -1,20 +1,131 @@
+import { getApiToken } from "./auth";
+
 const DEFAULT_API_URL = "http://127.0.0.1:8000";
 
 const API_URL = (
   import.meta.env.VITE_API_URL || DEFAULT_API_URL
 ).replace(/\/+$/, "");
 
-async function apiRequest(path, errorMessage) {
-  const response = await fetch(`${API_URL}${path}`);
+
+async function parseError(response, fallbackMessage) {
+  try {
+    const body = await response.json();
+
+    if (body?.detail) {
+      return body.detail;
+    }
+  } catch {
+    // Ignore JSON parsing errors and use fallback.
+  }
+
+  return fallbackMessage;
+}
+
+
+export async function validateApiToken(token) {
+  const normalizedToken = token.trim();
+
+  if (!normalizedToken) {
+    throw new Error("API token cannot be empty.");
+  }
+
+  const response = await fetch(
+    `${API_URL}/auth/me`,
+    {
+      headers: {
+        Authorization: `Bearer ${normalizedToken}`,
+      },
+    }
+  );
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(
+        "PlatformPilot authentication failed."
+      );
+    }
+
+    if (response.status === 503) {
+      throw new Error(
+        "PlatformPilot authentication is not configured."
+      );
+    }
+
     throw new Error(
-      `${errorMessage} (HTTP ${response.status})`
+      await parseError(
+        response,
+        `Unable to validate token (HTTP ${response.status}).`
+      )
     );
   }
 
   return response.json();
 }
+
+
+async function apiRequest(
+  path,
+  errorMessage,
+  options = {}
+) {
+  const token = getApiToken();
+
+  const headers = new Headers(
+    options.headers || {}
+  );
+
+  if (token) {
+    headers.set(
+      "Authorization",
+      `Bearer ${token}`
+    );
+  }
+
+  const response = await fetch(
+    `${API_URL}${path}`,
+    {
+      ...options,
+      headers,
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(
+        "PlatformPilot authentication is required."
+      );
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        "Your PlatformPilot role is not authorized for this operation."
+      );
+    }
+
+    throw new Error(
+      await parseError(
+        response,
+        `${errorMessage} (HTTP ${response.status})`
+      )
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function getCurrentPrincipal() {
+  const token = getApiToken();
+
+  if (!token) {
+    throw new Error(
+      "PlatformPilot authentication is required."
+    );
+  }
+
+  return validateApiToken(token);
+}
+
 
 export async function getDashboard() {
   return apiRequest(
@@ -23,12 +134,14 @@ export async function getDashboard() {
   );
 }
 
+
 export async function getClusterSummary() {
   return apiRequest(
     "/cluster-summary",
     "Unable to load cluster summary."
   );
 }
+
 
 export async function getPods() {
   return apiRequest(
@@ -37,19 +150,32 @@ export async function getPods() {
   );
 }
 
-export async function getPod(namespace, podName) {
+
+export async function getPod(
+  namespace,
+  podName
+) {
   return apiRequest(
-    `/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`,
+    `/pods/${encodeURIComponent(
+      namespace
+    )}/${encodeURIComponent(podName)}`,
     "Unable to load pod."
   );
 }
 
-export async function getPodAnalysis(namespace, podName) {
+
+export async function getPodAnalysis(
+  namespace,
+  podName
+) {
   return apiRequest(
-    `/analysis/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`,
+    `/analysis/${encodeURIComponent(
+      namespace
+    )}/${encodeURIComponent(podName)}`,
     "Unable to load pod analysis."
   );
 }
+
 
 export async function getDeployments() {
   return apiRequest(
@@ -58,12 +184,14 @@ export async function getDeployments() {
   );
 }
 
+
 export async function getDeployment(name) {
   return apiRequest(
     `/deployments/${encodeURIComponent(name)}`,
     "Unable to load deployment."
   );
 }
+
 
 export async function getNodes() {
   return apiRequest(
@@ -72,12 +200,14 @@ export async function getNodes() {
   );
 }
 
+
 export async function getNode(name) {
   return apiRequest(
     `/nodes/${encodeURIComponent(name)}`,
     "Unable to load node."
   );
 }
+
 
 export async function getNamespaces() {
   return apiRequest(
@@ -86,6 +216,7 @@ export async function getNamespaces() {
   );
 }
 
+
 export async function getNamespace(name) {
   return apiRequest(
     `/namespaces/${encodeURIComponent(name)}`,
@@ -93,12 +224,19 @@ export async function getNamespace(name) {
   );
 }
 
-export async function getPodLogs(namespace, podName) {
+
+export async function getPodLogs(
+  namespace,
+  podName
+) {
   return apiRequest(
-    `/logs/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}`,
+    `/logs/${encodeURIComponent(
+      namespace
+    )}/${encodeURIComponent(podName)}`,
     "Unable to load pod logs."
   );
 }
+
 
 export async function getPrometheusHealth() {
   return apiRequest(
@@ -107,12 +245,14 @@ export async function getPrometheusHealth() {
   );
 }
 
+
 export async function getPrometheusPodMetrics() {
   return apiRequest(
     "/metrics/pods",
     "Unable to load Prometheus pod metrics."
   );
 }
+
 
 export async function getPrometheusClusterMetrics() {
   return apiRequest(
@@ -121,12 +261,14 @@ export async function getPrometheusClusterMetrics() {
   );
 }
 
+
 export async function getPrometheusNamespaceMetrics() {
   return apiRequest(
     "/metrics/pods/namespaces",
     "Unable to load namespace metrics."
   );
 }
+
 
 export async function getAiSummary() {
   return apiRequest(
@@ -135,8 +277,14 @@ export async function getAiSummary() {
   );
 }
 
+
 export async function getGlobalSearchData() {
-  const [pods, deployments, nodes, namespaces] = await Promise.all([
+  const [
+    pods,
+    deployments,
+    nodes,
+    namespaces,
+  ] = await Promise.all([
     getPods(),
     getDeployments(),
     getNodes(),
@@ -144,11 +292,18 @@ export async function getGlobalSearchData() {
   ]);
 
   return {
-    pods: Array.isArray(pods) ? pods : pods?.items || [],
+    pods: Array.isArray(pods)
+      ? pods
+      : pods?.items || [],
+
     deployments: Array.isArray(deployments)
       ? deployments
       : deployments?.items || [],
-    nodes: Array.isArray(nodes) ? nodes : nodes?.items || [],
+
+    nodes: Array.isArray(nodes)
+      ? nodes
+      : nodes?.items || [],
+
     namespaces: Array.isArray(namespaces)
       ? namespaces
       : namespaces?.items || [],

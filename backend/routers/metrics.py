@@ -3,10 +3,12 @@ from typing import Any
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     status,
 )
 
+from core.security import require_role
 from services.prometheus_service import (
     PrometheusConnectionError,
     PrometheusQueryError,
@@ -23,6 +25,9 @@ from services.prometheus_service import (
 router = APIRouter(
     prefix="/metrics",
     tags=["Prometheus Metrics"],
+    dependencies=[
+        Depends(require_role("viewer")),
+    ],
 )
 
 
