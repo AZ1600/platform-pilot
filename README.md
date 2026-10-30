@@ -1,275 +1,232 @@
-# 🚀 PlatformPilot
 
-> **An AI-assisted Kubernetes Observability Platform for monitoring cluster health, analyzing workloads, enforcing role-based API access, and accelerating incident response.**
+# PlatformPilot
 
-PlatformPilot combines Kubernetes APIs, Prometheus metrics, operational analysis, AI-assisted insights, and role-based access control into a modern dashboard designed for Platform Engineers, DevOps Engineers, and Site Reliability Engineers.
-
-The platform can also export structured operational findings to CloudOps Command Center for approval-gated operational workflows.
-
----
-
-## 🎥 Demo
-
-<p align="center">
-  <img src="screenshots/platformpilot-demo.gif" alt="PlatformPilot Demo" width="100%">
-</p>
-
----
-
+[![CI](https://github.com/AZ1600/platform-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/AZ1600/platform-pilot/actions/workflows/ci.yml)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.31-326CE5?logo=kubernetes&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.11-009688?logo=fastapi&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Observability-326CE5?logo=kubernetes&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+**An AI-assisted Kubernetes observability and operations platform with role-based API access, infrastructure monitoring, incident investigation and controlled CloudOps integration.**
+
+PlatformPilot combines **React, FastAPI, Kubernetes APIs and Prometheus** to help platform engineers investigate infrastructure health, monitor workloads, examine operational findings and export incidents into approval-gated workflows.
+
+The project demonstrates full-stack platform engineering, backend authorization, service integration, automated testing and container-oriented development.
+
+**Explore:** [Technical Review](#technical-review--start-here) · [Architecture](#system-architecture) · [Security](#authentication-and-rbac) · [Validation](#testing-and-validation) · [Getting Started](#getting-started) · [Limitations](#scope-and-limitations)
+
 ---
 
-# 📖 Overview
+## Demo
 
-PlatformPilot is a Kubernetes observability and operational-assistance platform that provides visibility into:
+![PlatformPilot dashboard walkthrough](screenshots/platformpilot-demo.gif)
 
-- cluster resources
-- infrastructure health
-- workloads
+The recorded demonstration showcases the dashboard and operational investigation interface.
+
+> [!IMPORTANT]
+> PlatformPilot is a Kubernetes operations portfolio project. Live cluster and Prometheus capabilities require configured infrastructure. Its role-scoped bearer tokens are a lightweight application authentication mechanism, not an enterprise identity provider. CloudOps export records operational findings for review; it does not authorize or execute infrastructure remediation.
+
+---
+
+## Technical Review — Start Here
+
+For recruiters and engineers reviewing the implementation, the following links provide a direct path to the most important code and evidence.
+
+| Engineering Area | What to Review | Evidence |
+| --- | --- | --- |
+| Architecture | React, FastAPI, Kubernetes, Prometheus and integration boundaries | [Architecture guide](docs/ARCHITECTURE.md) |
+| API authentication | Bearer-token validation, role hierarchy and fail-closed responses | [Security implementation](backend/core/security.py) |
+| API authorization | Protected read and operational endpoints | [RBAC regression tests](backend/tests/test_rbac_routes.py) |
+| Authentication edge cases | Invalid credentials, role handling and authorization failures | [Security tests](backend/tests/test_security.py) |
+| CloudOps integration | Protected incident export and service-level failure handling | [Export service](backend/services/cloudops_export_service.py) |
+| Operational findings | Incident-to-finding transformation | [Finding service](backend/services/operational_finding_service.py) |
+| Frontend authentication | Runtime validation and browser session token handling | [API access component](frontend/src/components/ApiAccess.jsx) |
+| CI/CD | Backend regression tests, frontend lint and production build | [GitHub Actions workflow](.github/workflows/ci.yml) |
+
+### Validation at a Glance
+
+| Check | Verified result |
+| --- | --- |
+| Backend regression tests | **44 passed** locally on 30 October 2026 |
+| Backend test warnings | 1 third-party Starlette TestClient deprecation warning |
+| Frontend ESLint | Passed |
+| Frontend production build | Passed |
+| Dependency security audit | **0 reported vulnerabilities** after lockfile updates |
+| Clean dependency installation | `npm ci` passed with the updated lockfile |
+| Frontend dependency changes | 13 packages updated during audit remediation |
+
+The vulnerability count is an npm audit snapshot, not a guarantee that the application is free of security defects. CI verifies automated checks; it does not validate a live Kubernetes deployment or enterprise production readiness.
+
+---
+
+## The Engineering Problem
+
+Kubernetes environments expose operational information through multiple systems.
+
+Engineers often need to examine:
+
+- Pod health and container failures
+- Deployment readiness and availability
+- Node health and capacity
+- Namespace state
+- Kubernetes events and container logs
 - Prometheus metrics
-- incidents
-- operational findings
-- AI-assisted health summaries
-- controlled CloudOps exports
+- Infrastructure incidents and operational recommendations
 
-Built with **React**, **FastAPI**, the **Kubernetes Python Client**, and **Prometheus**, PlatformPilot combines operational dashboards with analysis workflows that help engineers detect issues, investigate workloads, and make faster operational decisions.
+This information can be distributed across dashboards, command-line tools, API responses and monitoring systems.
 
-The platform now also includes application-wide API role-based access control for protected read and operational endpoints.
+PlatformPilot consolidates supported operational views into a single interface while separating **read-only investigation from privileged operational actions**.
 
----
-
-# ✨ Key Features
-
-### 📊 Cluster Observability
-
-- Kubernetes Health Dashboard
-- Live Cluster Monitoring
-- Health Scoring
-- Prometheus Metrics
-- Performance Analytics
-- Manual and Auto Refresh
-- PDF Report Export
-
-### 🤖 AI-Assisted Operations
-
-- Operations Summary
-- Root Cause Analysis Support
-- Cluster Health Assessment
-- Severity Classification
-- Operational Recommendations
-- Incident Detection
-
-### 🔍 Productivity
-
-- Global Kubernetes Search
-- Command Palette with Ctrl+K / ⌘K
-- Keyboard Navigation
-- Instant Resource Discovery
-- Search Pods, Deployments, Nodes, and Namespaces
-
-### 📈 Infrastructure Monitoring
-
-- Pods
-- Deployments
-- Nodes
-- Namespaces
-- Kubernetes Events
-- Container Logs
-- Resource Health Monitoring
-
-### 🔐 Security and RBAC
-
-- Bearer-token authentication
-- `viewer`, `operator`, and `admin` roles
-- viewer protection for read-oriented APIs
-- operator protection for operational actions
-- fail-closed authentication
-- backend token validation
-- browser session token handling
-- authenticated role display in the frontend
-
-### 🔗 CloudOps Integration
-
-- Structured operational finding generation
-- Authenticated delivery to CloudOps Command Center
-- Environment and cluster metadata
-- Unique finding identifiers
-- Contract-driven incident export
-- Separate PlatformPilot and CloudOps trust boundaries
+The CloudOps integration extends the workflow by exporting structured findings to a separate approval-controlled platform.
 
 ---
 
-# 🏗 Architecture
+## Key Capabilities
 
-```text
-                         React + Vite
-                              │
-                              │ Bearer Token
-                              ▼
-                       FastAPI Backend
-                     Authentication + RBAC
-                              │
-          ┌───────────────────┼───────────────────┐
-          ▼                   ▼                   ▼
- Kubernetes Python      Prometheus HTTP      Operational
-      Client                  API              Analysis
-          │                   │                   │
-          └───────────────────┼───────────────────┘
-                              ▼
-                      Kubernetes Cluster
-                              │
-                              ▼
-                    Operational Findings
-                              │
-                              │ CloudOps Ingest Token
-                              ▼
-                 CloudOps Command Center
+### Kubernetes Observability
+
+- Cluster health overview
+- Pod, Deployment, Node and Namespace inspection
+- Kubernetes resource discovery
+- Container log inspection
+- Kubernetes event investigation
+- Cluster health scoring
+- Manual and automatic data refresh
+
+### Monitoring and Analysis
+
+- Prometheus-backed metrics when a monitoring endpoint is available
+- CPU and memory visualizations
+- Performance analytics
+- Infrastructure health summaries
+- Operational findings and incident analysis
+- AI-assisted operational recommendations
+
+### Engineering Productivity
+
+- Global Kubernetes resource search
+- Command Palette using `Ctrl + K` or `Cmd + K`
+- Keyboard navigation
+- Resource-specific detail pages
+- PDF report export
+- Responsive dashboard interface
+
+### Security and Operational Control
+
+- Backend bearer-token authentication
+- `viewer`, `operator` and `admin` roles
+- Protected Kubernetes and monitoring endpoints
+- Operator-only CloudOps export
+- Server-side authorization
+- Runtime token validation
+- Session-scoped frontend token storage
+- Separate PlatformPilot and CloudOps credentials
+
+---
+
+## System Architecture
+
+PlatformPilot uses a React frontend and a FastAPI backend to connect Kubernetes data, Prometheus metrics and operational analysis.
+
+```mermaid
+flowchart TD
+    USER[Platform Engineer]
+    UI[React + Vite Dashboard]
+    AUTH[FastAPI Authentication and RBAC]
+    API[FastAPI Services]
+    K8S[Kubernetes API]
+    PROM[Prometheus]
+    ANALYSIS[Operational Analysis]
+    FINDINGS[Structured Findings]
+    CLOUDOPS[CloudOps Command Center]
+    APPROVAL[Human Approval Workflow]
+
+    USER --> UI
+    UI -->|Bearer token| AUTH
+    AUTH --> API
+
+    API --> K8S
+    API --> PROM
+    K8S --> ANALYSIS
+    PROM --> ANALYSIS
+    ANALYSIS --> UI
+
+    ANALYSIS --> FINDINGS
+    FINDINGS -->|Operator-authorized export| CLOUDOPS
+    CLOUDOPS --> APPROVAL
 ```
 
-For a detailed architecture walkthrough, see:
+### Architectural Responsibilities
 
-```text
-docs/ARCHITECTURE.md
-```
+| Component | Responsibility |
+| --- | --- |
+| React frontend | Dashboard, navigation, resource views and user interaction |
+| FastAPI backend | Authentication, API endpoints and operational service orchestration |
+| Kubernetes client | Retrieve workload, cluster and resource information |
+| Prometheus integration | Query supported operational metrics |
+| Analysis services | Produce health summaries and operational recommendations |
+| Security layer | Authenticate requests and enforce minimum roles |
+| CloudOps export service | Transform and deliver structured operational findings |
+| GitHub Actions | Validate backend tests, frontend lint and build |
+
+The backend must have suitable Kubernetes and Prometheus connectivity for the corresponding live features to work.
+
+For more details, see [architecture documentation](docs/ARCHITECTURE.md).
 
 ---
 
-# 🔐 API Security
+## Authentication and RBAC
 
-PlatformPilot implements role-scoped bearer-token authentication across protected backend APIs.
+PlatformPilot implements server-side, role-scoped bearer-token authentication.
 
-The authorization model defines three roles:
+The current role hierarchy is:
 
 ```text
 viewer
-   │
-   ▼
+   |
+   v
 operator
-   │
-   ▼
+   |
+   v
 admin
 ```
 
 Higher roles inherit the permissions of lower roles.
 
----
+### Role Permissions
 
-## Viewer
+| Role | Capabilities |
+| --- | --- |
+| Viewer | Read supported operational resources, monitoring data and analysis |
+| Operator | Viewer access plus protected operational actions such as CloudOps export |
+| Admin | Operator and viewer permissions, with the highest current application role |
 
-The `viewer` role provides read-oriented access to PlatformPilot operational data.
+### Authentication Behaviour
 
-Protected viewer endpoints include resources such as:
+| Condition | HTTP response |
+| --- | --- |
+| No PlatformPilot authentication tokens configured | 503 Service Unavailable |
+| Missing or invalid bearer token | 401 Unauthorized |
+| Valid token with insufficient role | 403 Forbidden |
+| Valid token with sufficient role | Request proceeds |
 
-```text
-Pods
-Deployments
-Nodes
-Namespaces
-Events
-Logs
-Analysis
-Dashboard
-Cluster Summary
-Prometheus Metrics
-AI Summary
-```
+Bearer-token comparison uses `secrets.compare_digest` in the backend.
 
-A viewer can inspect operational state but cannot perform operator-level actions.
+Authentication is enforced through FastAPI dependencies rather than relying on hidden frontend controls.
 
----
+[Security implementation](backend/core/security.py) · [Security tests](backend/tests/test_security.py)
 
-## Operator
+### Authenticated Principal Endpoint
 
-The `operator` role inherits viewer access and can also perform operational actions.
-
-For example:
-
-```text
-POST /cloudops/findings
-```
-
-requires at least:
-
-```text
-operator
-```
-
-A viewer attempting this operation receives:
-
-```text
-403 Forbidden
-```
-
----
-
-## Admin
-
-The `admin` role inherits operator and viewer permissions.
-
-It provides the highest current PlatformPilot API privilege level and is available for future administrative controls.
-
----
-
-# 🔑 Authentication Behaviour
-
-PlatformPilot follows a fail-closed model.
-
-```text
-Authentication not configured
-        ↓
-503 Service Unavailable
-```
-
-```text
-Missing or invalid token
-        ↓
-401 Unauthorized
-```
-
-```text
-Authenticated but insufficient role
-        ↓
-403 Forbidden
-```
-
-```text
-Authenticated with sufficient role
-        ↓
-Request allowed
-```
-
-Bearer-token values are compared using constant-time comparison.
-
-Configure authentication through environment variables:
-
-```bash
-export PLATFORM_VIEWER_TOKEN="replace-with-long-random-token"
-export PLATFORM_OPERATOR_TOKEN="replace-with-long-random-token"
-export PLATFORM_ADMIN_TOKEN="replace-with-long-random-token"
-```
-
-Use long randomly generated values.
-
-Never commit real production credentials to the repository.
-
----
-
-# 👤 Authenticated Principal Endpoint
-
-PlatformPilot exposes:
+The backend provides:
 
 ```text
 GET /auth/me
 ```
 
-This endpoint validates the supplied bearer token without requiring Kubernetes or Prometheus connectivity.
+This endpoint validates the caller's bearer token independently of Kubernetes and Prometheus availability.
 
-Example authenticated response:
+Example response:
 
 ```json
 {
@@ -278,535 +235,370 @@ Example authenticated response:
 }
 ```
 
-This provides a simple way for clients and the frontend to confirm the active PlatformPilot role.
+### Frontend Authentication Flow
+
+```text
+User enters API token
+        |
+        v
+Frontend calls /auth/me
+        |
+        v
+FastAPI validates bearer token
+        |
+        v
+Backend returns assigned role
+        |
+        v
+Frontend stores validated token
+in browser sessionStorage
+        |
+        v
+Protected API requests use token
+```
+
+The browser does not receive a hardcoded PlatformPilot token through the Vite production bundle.
+
+The implementation uses `sessionStorage` for token persistence within the browser session. This is not equivalent to a hardened identity session with short-lived, server-managed credentials.
+
+![Authenticated viewer session](screenshots/rbac-viewer-session.png)
 
 ---
 
-# 🖥 Frontend API Access
+## CloudOps Integration
 
-The React frontend supports runtime API authentication.
+PlatformPilot can generate structured findings from operational incidents and send them to CloudOps Command Center.
 
-The flow is:
+This integration preserves two independent security boundaries.
 
-```text
-User enters bearer token
-        ↓
-Frontend calls GET /auth/me
-        ↓
-FastAPI validates token
-        ↓
-Role returned
-        ↓
-Token stored in sessionStorage
-        ↓
-Authenticated API requests
-```
+### Boundary 1 — Calling PlatformPilot
 
-The frontend does **not** bake PlatformPilot bearer tokens into the Vite production bundle.
-
-Tokens are stored only in:
+A caller must authenticate with a PlatformPilot bearer token and have at least the `operator` role to invoke:
 
 ```text
-sessionStorage
-```
-
-and therefore remain scoped to the current browser session.
-
-The navigation displays the validated role:
-
-```text
-API Access ✓ · viewer
-```
-
-A token is only shown as authenticated after the backend successfully validates it.
-
-![RBAC Viewer Session](screenshots/rbac-viewer-session.png)
-
----
-
-# 🔒 Current Identity Scope
-
-The current implementation provides:
-
-```text
-API authentication
-Role-based authorization
-Browser session token handling
-Backend role validation
-```
-
-It is not intended to represent a complete enterprise identity platform.
-
-Future identity enhancements may include:
-
-```text
-OIDC
-SSO
-Microsoft Entra ID
-External identity providers
-Short-lived access tokens
-Centralized user and group management
-```
-
----
-
-# 🔗 CloudOps Security Boundary
-
-PlatformPilot and CloudOps use separate authentication boundaries.
-
-## Calling PlatformPilot
-
-A caller requesting an operational export must authenticate to PlatformPilot with a role-scoped PlatformPilot bearer token.
-
-```text
-Caller
-  │
-  │ PlatformPilot operator/admin token
-  ▼
 POST /cloudops/findings
 ```
 
-## PlatformPilot Calling CloudOps
+A `viewer` receives HTTP 403 before the export operation is performed.
 
-After PlatformPilot authorization succeeds, the backend authenticates its outbound request to CloudOps using:
+### Boundary 2 — PlatformPilot Calling CloudOps
 
-```text
-CLOUDOPS_INGEST_TOKEN
-```
+Once the request passes PlatformPilot authorization, the backend uses its separately configured CloudOps ingestion credential for outbound delivery.
 
 ```text
-PlatformPilot
-  │
-  │ CloudOps ingest token
-  ▼
-CloudOps Command Center
+PlatformPilot caller
+        |
+        | Operator or Admin token
+        v
+PlatformPilot API
+        |
+        | CLOUDOPS_INGEST_TOKEN
+        v
+CloudOps ingestion endpoint
+        |
+        v
+Finding validation and storage
+        |
+        v
+Human-controlled review
 ```
 
-This separation prevents reuse of one credential across both trust boundaries.
+The integration supports:
+
+- Structured operational finding generation
+- Unique finding identifiers
+- UTC observation timestamps
+- Environment and cluster metadata
+- Authenticated outbound delivery
+- Error handling for external-service failures
+- Contract-oriented finding representation
+
+A successful export does not mean remediation was performed.
+
+[CloudOps router](backend/routers/cloudops.py) · [Export service](backend/services/cloudops_export_service.py) · [Export tests](backend/tests/test_cloudops_export_service.py)
 
 ---
 
-# 🧪 RBAC Validation
+## Operational Investigation
 
-The security model has been validated at both automated-test and runtime levels.
+### Dashboard
 
-Runtime behaviour demonstrated:
+Displays cluster health, workload summaries, resource statistics and operational information.
 
-```text
-Missing / bad token
-        ↓
-401 Unauthorized
-```
+![Dashboard overview](screenshots/dashboard-overview.png)
 
-```text
-Viewer token
-        ↓
-GET /auth/me
-        ↓
-200 OK
-role = viewer
-```
+### Global Search
 
-```text
-Viewer token
-        ↓
-POST /cloudops/findings
-        ↓
-403 Forbidden
-```
+Allows engineers to discover Kubernetes Pods, Deployments, Nodes and Namespaces.
 
-```text
-Operator token
-        ↓
-GET /auth/me
-        ↓
-200 OK
-role = operator
-```
+![Global search](screenshots/global-search.png)
 
-The CloudOps action itself may still depend on Kubernetes, Prometheus, and CloudOps connectivity after authorization succeeds.
+### Command Palette
 
-This separation demonstrates that authentication and authorization are evaluated before downstream operational dependencies.
+Provides keyboard-driven navigation and resource discovery.
+
+![Command palette](screenshots/command-palette.png)
+
+### Performance Analytics
+
+Displays operational metrics and resource analysis when monitoring data is available.
+
+![Performance analytics](screenshots/performance-analytics.png)
+
+### AI Operations Summary
+
+Presents health analysis, operational findings and recommendations.
+
+![AI operations summary](screenshots/ai-operations-summary.png)
+
+### Incident Center
+
+Provides a centralized view for investigating operational incidents.
+
+![Incident center](screenshots/incident-center.png)
+
+### Project Overview
+
+![PlatformPilot project overview](screenshots/platformpilot-overview.png)
 
 ---
 
-# 🧪 Automated Validation
+## Technology Stack
 
-The backend security and integration layers are covered by automated tests.
+| Layer | Technologies |
+| --- | --- |
+| Frontend | React 19, React Router, Vite, JavaScript and CSS |
+| Backend | FastAPI, Python 3.11 and Uvicorn |
+| Kubernetes integration | Kubernetes Python Client |
+| Monitoring | Prometheus HTTP API |
+| Data visualization | Recharts |
+| Authentication | Bearer tokens and role-based FastAPI dependencies |
+| Testing | Pytest, FastAPI TestClient, HTTPX |
+| Frontend validation | ESLint and Vite build |
+| CI/CD | GitHub Actions |
+| Infrastructure | Docker and Kubernetes manifests |
+| External integration | CloudOps Command Center ingestion API |
 
-Current backend verification:
+---
 
-```text
-44 tests passed
-```
+## Testing and Validation
 
-The test suite covers:
+### Backend Tests
 
-- CloudOps export services
-- CloudOps route behavior
-- CloudOps delivery failures
-- configuration handling
-- operational finding generation
-- Kubernetes pod routes
-- bearer-token authentication
-- role mapping
-- viewer authorization
-- operator authorization
-- admin authorization
-- protected read endpoints
-- Prometheus endpoint authentication
-- AI endpoint authentication
-- public health access
-- `/auth/me`
-- HTTP `401`
-- HTTP `403`
-- successful authenticated requests
-
-The frontend is validated with:
+From the repository root, with the Python 3.11 virtual environment active:
 
 ```bash
+python -m pytest -q
+```
+
+Verified locally on 30 October 2026:
+
+```text
+44 passed, 1 warning
+```
+
+The single recorded warning originates from a deprecated Starlette/FastAPI test-client import path. It did not cause a test failure.
+
+The suite includes tests for:
+
+- Authentication configuration
+- Invalid and missing bearer tokens
+- Viewer, operator and admin permissions
+- Protected resource endpoints
+- Public health access
+- `/auth/me`
+- CloudOps routing and export
+- Operational finding generation
+- Kubernetes pod route behaviour
+- Downstream service failures
+
+[Backend tests](backend/tests/)
+
+### Frontend Validation
+
+```bash
+cd frontend
+npm ci
 npm run lint
 npm run build
 ```
 
-GitHub Actions runs backend tests and frontend validation on pull requests and pushes to `main`.
+These commands validate dependency installation, ESLint configuration and production asset generation.
 
----
+### Dependency Security
 
-# 🛠 Technology Stack
+The frontend dependency lockfile was refreshed on 30 October 2026 after npm reported one critical and four high-severity advisories.
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, React Router, Vite, CSS3 |
-| Backend | FastAPI, Python 3.11, Uvicorn |
-| Kubernetes | Kubernetes Python Client |
-| Monitoring | Prometheus |
-| Security | Bearer-token authentication, RBAC, sessionStorage |
-| Integration | CloudOps operational finding API |
-| Testing | Pytest, FastAPI TestClient, HTTPX |
-| CI | GitHub Actions |
-| Infrastructure | Docker, Kubernetes, kubectl |
+The changes were limited to the dependency lockfile. The subsequent clean installation, audit, lint and production build passed.
 
----
+To reproduce the audit using the current lockfile:
 
-# 📸 Screenshots
-
-## 📊 Dashboard Overview
-
-The central dashboard provides cluster health, workload statistics, operational insights, and live monitoring.
-
-![Dashboard](screenshots/dashboard-overview.png)
-
----
-
-## 🔐 Authenticated Viewer Session
-
-The frontend validates the supplied API token against `/auth/me` before displaying the authenticated role.
-
-```text
-API Access ✓ · viewer
+```bash
+cd frontend
+npm ci
+npm audit --omit=dev
+npm audit
 ```
 
-![RBAC Viewer Session](screenshots/rbac-viewer-session.png)
+The recorded results reported zero known vulnerabilities at the time of testing. New advisories may appear as dependencies and security databases evolve.
+
+### Continuous Integration
+
+[GitHub Actions CI](.github/workflows/ci.yml) runs on pull requests and pushes to `main`.
+
+The workflow includes:
+
+**Backend**
+- Python 3.11 setup
+- Development dependency installation
+- Pytest regression tests
+
+**Frontend**
+- Node.js 22 setup
+- Locked dependency installation
+- ESLint validation
+- Vite production build
+
+The workflow uses read-only repository permissions. Passing CI verifies these checks; it does not establish live Kubernetes functionality or deployment readiness.
 
 ---
 
-## 🔍 Global Search
+## Getting Started
 
-Search Kubernetes resources across Pods, Deployments, Nodes, and Namespaces.
+### Requirements
 
-![Global Search](screenshots/global-search.png)
+- Python 3.11
+- Node.js 22-compatible environment
+- npm
+- Kubernetes environment for live cluster functionality
+- Prometheus for supported monitoring features
+- Optional CloudOps Command Center instance for finding export
 
----
-
-## ⌨️ Command Palette
-
-Navigate the platform using keyboard shortcuts with **Ctrl+K / ⌘K**.
-
-![Command Palette](screenshots/command-palette.png)
-
----
-
-## 📈 Performance Analytics
-
-Monitor CPU, memory, pod distribution, and namespace utilization using Prometheus-powered analytics.
-
-![Performance Analytics](screenshots/performance-analytics.png)
-
----
-
-## 🤖 AI Operations Summary
-
-Review operational insights, health analysis, findings, incidents, and recommended actions.
-
-![AI Operations Summary](screenshots/ai-operations-summary.png)
-
----
-
-## 🚨 Incident Center
-
-Track operational alerts and Kubernetes incidents from a centralized dashboard.
-
-![Incident Center](screenshots/incident-center.png)
-
----
-
-# 🌟 Project Overview
-
-This infographic summarizes PlatformPilot's architecture, roadmap, repository highlights, and platform-engineering focus.
-
-![PlatformPilot Overview](screenshots/platformpilot-overview.png)
-
----
-
-# 📂 Project Structure
-
-```text
-platform-pilot/
-│
-├── backend/
-│   ├── core/
-│   │   ├── config.py
-│   │   └── security.py
-│   │
-│   ├── routers/
-│   │   ├── ai.py
-│   │   ├── cloudops.py
-│   │   └── metrics.py
-│   │
-│   ├── services/
-│   ├── tests/
-│   │   ├── test_rbac_routes.py
-│   │   └── ...
-│   │
-│   ├── .env.example
-│   ├── Dockerfile
-│   ├── app.py
-│   ├── requirements.txt
-│   └── requirements-dev.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ApiAccess.jsx
-│   │   │   ├── Navbar.jsx
-│   │   │   └── ...
-│   │   │
-│   │   ├── pages/
-│   │   │
-│   │   └── services/
-│   │       ├── api.js
-│   │       └── auth.js
-│   │
-│   ├── package.json
-│   └── vite.config.js
-│
-├── infrastructure/
-│   ├── backend-deployment.yaml
-│   ├── backend-service.yaml
-│   └── monitoring-values-docker-desktop.yaml
-│
-├── docs/
-├── screenshots/
-│   ├── rbac-viewer-session.png
-│   └── ...
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-│
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── pytest.ini
-└── README.md
-```
-
----
-
-# 🚀 Getting Started
-
-## Clone the Repository
+### Clone the Repository
 
 ```bash
 git clone https://github.com/AZ1600/platform-pilot.git
-
 cd platform-pilot
 ```
 
----
+### Backend Setup
 
-# 🐍 Backend
-
-Create and activate a Python virtual environment:
+Create a virtual environment:
 
 ```bash
-python3 -m venv .venv
-
+python3.11 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install backend dependencies:
-
-```bash
-python -m pip install -r backend/requirements.txt
-```
-
-For development and testing:
+Install dependencies:
 
 ```bash
 python -m pip install -r backend/requirements-dev.txt
 ```
 
-Configure development credentials.
-
-For example:
+Configure development tokens in the environment:
 
 ```bash
-export PLATFORM_VIEWER_TOKEN="replace-with-viewer-token"
-export PLATFORM_OPERATOR_TOKEN="replace-with-operator-token"
-export PLATFORM_ADMIN_TOKEN="replace-with-admin-token"
+export PLATFORM_VIEWER_TOKEN="replace-with-long-random-token"
+export PLATFORM_OPERATOR_TOKEN="replace-with-long-random-token"
+export PLATFORM_ADMIN_TOKEN="replace-with-long-random-token"
 ```
 
-Start the backend:
+For optional CloudOps integration:
+
+```bash
+export CLOUDOPS_INGEST_TOKEN="replace-with-cloudops-ingest-token"
+export CLOUDOPS_FINDINGS_URL="http://127.0.0.1:3000/api/platform-pilot/findings"
+export PLATFORM_ENVIRONMENT="local"
+export KUBERNETES_CLUSTER_NAME="docker-desktop"
+```
+
+These are placeholder examples. Use unique randomly generated secrets for real use.
+
+The backend configuration template is available at [backend/.env.example](backend/.env.example). Setting values in a file alone does not automatically export them into the shell.
+
+Start the API:
 
 ```bash
 cd backend
-
 uvicorn app:app --reload
 ```
 
-Backend API:
-
-```text
-http://localhost:8000
-```
-
-Public health endpoint:
-
-```text
-http://localhost:8000/health
-```
-
-Authenticated principal endpoint:
-
-```text
-http://localhost:8000/auth/me
-```
-
----
-
-# 🔑 Backend Environment Configuration
-
-A configuration template is available at:
-
-```text
-backend/.env.example
-```
-
-Example values:
-
-```bash
-PLATFORM_VIEWER_TOKEN=replace-with-viewer-token
-PLATFORM_OPERATOR_TOKEN=replace-with-operator-token
-PLATFORM_ADMIN_TOKEN=replace-with-admin-token
-
-CLOUDOPS_INGEST_TOKEN=replace-with-cloudops-ingest-token
-CLOUDOPS_FINDINGS_URL=http://127.0.0.1:3000/api/platform-pilot/findings
-
-PLATFORM_ENVIRONMENT=local
-KUBERNETES_CLUSTER_NAME=docker-desktop
-```
-
-Use long randomly generated values for real tokens.
-
-Never commit production credentials to the repository.
-
----
-
-# 🖥 Frontend
-
-Install and run:
-
-```bash
-cd frontend
-
-cp .env.example .env
-
-npm install
-
-npm run dev
-```
-
-The frontend uses:
+Default backend address:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-by default.
-
-To use a backend at a different address, configure:
+Interactive API documentation:
 
 ```text
-VITE_API_URL
+http://127.0.0.1:8000/docs
 ```
 
-inside:
+Public application health check:
 
-```text
-frontend/.env
+```bash
+curl http://127.0.0.1:8000/health
 ```
 
-Frontend:
+The health check verifies application responsiveness, not Kubernetes or Prometheus availability.
+
+### Frontend Setup
+
+Open a second terminal at the repository root:
+
+```bash
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+Frontend URL:
 
 ```text
 http://localhost:5173
 ```
 
----
-
-# 🔐 Frontend Authentication
-
-Once PlatformPilot is running:
-
-1. Open the frontend.
-2. Select **API Access**.
-3. Enter a valid `viewer`, `operator`, or `admin` bearer token.
-4. Select **Validate & Save**.
-5. PlatformPilot validates the token against `/auth/me`.
-6. The active role appears in the navigation.
-
-Example:
+The default frontend API configuration points to:
 
 ```text
-API Access ✓ · viewer
+http://127.0.0.1:8000
 ```
 
-A rejected token is not stored as an authenticated session.
+Set `VITE_API_URL` in `frontend/.env` if the backend is hosted elsewhere.
 
-The bearer token is stored only for the current browser session.
+### Connecting the Frontend
+
+After both services are running:
+
+1. Open the frontend in your browser.
+2. Select **API Access**.
+3. Enter a configured PlatformPilot bearer token.
+4. Select **Validate & Save**.
+5. Confirm that the backend validates the token through `/auth/me`.
+6. Use the available dashboards according to the authorized role.
+
+Kubernetes and Prometheus functionality depends on the backend's access to those services.
 
 ---
 
-# 🔎 API Authentication Examples
+## API Authentication Examples
 
-## Public Health
+### Public Health Check
 
 ```bash
-curl -i \
-  http://127.0.0.1:8000/health
+curl -i http://127.0.0.1:8000/health
 ```
 
-Expected:
+Expected HTTP status:
 
 ```text
 200 OK
 ```
 
----
-
-## Authenticated Viewer
+### Authenticated Viewer
 
 ```bash
 curl -i \
@@ -823,9 +615,7 @@ Expected response:
 }
 ```
 
----
-
-## Viewer Authorization Boundary
+### Viewer Authorization Boundary
 
 ```bash
 curl -i \
@@ -840,9 +630,7 @@ Expected:
 403 Forbidden
 ```
 
----
-
-## Operator Identity
+### Operator Identity
 
 ```bash
 curl -i \
@@ -850,7 +638,7 @@ curl -i \
   http://127.0.0.1:8000/auth/me
 ```
 
-Expected:
+Expected response:
 
 ```json
 {
@@ -859,208 +647,159 @@ Expected:
 }
 ```
 
----
-
-# 🧪 Running Tests
-
-From the repository root with the Python virtual environment active:
-
-```bash
-python -m pytest
-```
-
-Current validated baseline:
-
-```text
-44 passed
-```
-
-Frontend validation:
-
-```bash
-cd frontend
-
-npm run lint
-npm run build
-```
-
-Whitespace validation:
-
-```bash
-git diff --check
-```
+The operator role permits the CloudOps export route, but successful export still depends on the availability and configuration of downstream services.
 
 ---
 
-# 🔄 CI Pipeline
-
-GitHub Actions validates both backend and frontend changes.
-
-### Backend
+## Repository Structure
 
 ```text
-Install Python dependencies
-        ↓
-Run Pytest
+platform-pilot/
+├── backend/
+│   ├── app.py
+│   ├── core/
+│   │   ├── config.py
+│   │   └── security.py
+│   ├── routers/
+│   │   ├── ai.py
+│   │   ├── cloudops.py
+│   │   ├── metrics.py
+│   │   └── ...
+│   ├── services/
+│   ├── tests/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── requirements-dev.txt
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── services/
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+├── infrastructure/
+│   ├── backend-deployment.yaml
+│   ├── backend-service.yaml
+│   └── monitoring-values-docker-desktop.yaml
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── ROADMAP.md
+│   └── LEARNING-JOURNAL.md
+├── screenshots/
+├── .github/workflows/ci.yml
+├── CONTRIBUTING.md
+├── CHANGELOG.md
+├── LICENSE
+└── README.md
 ```
-
-### Frontend
-
-```text
-Install Node dependencies
-        ↓
-ESLint
-        ↓
-Production Vite build
-```
-
-The workflow uses read-only repository permissions and runs on pull requests and pushes to `main`.
 
 ---
 
-# 🗺 Roadmap
+## Scope and Limitations
 
-## ✅ Completed
+PlatformPilot demonstrates practical Kubernetes and platform engineering workflows, but its current implementation has defined limitations.
 
-- Kubernetes Dashboard
-- Kubernetes Resource Monitoring
-- Cluster Health Scoring
-- Prometheus Integration
-- Performance Analytics
-- Operational Summary
-- Global Search
+- **Infrastructure:** Live functionality depends on a configured Kubernetes environment and supported monitoring services. Local tests use controlled dependencies and do not prove a live cluster is healthy.
+- **Identity:** Application authentication relies on configured bearer tokens rather than OIDC, SSO or centralized user identities.
+- **Browser security:** The frontend stores the validated API token in `sessionStorage`. This does not eliminate risks from malicious scripts or compromised browser sessions.
+- **Authorization:** Server-side role checks govern protected endpoints. Separate Kubernetes RBAC and cloud IAM permissions must also be configured appropriately.
+- **Observability:** The current platform does not claim multi-cluster inventory, long-term historical metrics storage or complete production monitoring coverage.
+- **AI assistance:** Operational summaries and recommendations are assistance for engineers, not a substitute for independent diagnosis or verification.
+- **CloudOps:** Findings can be exported, but remediation authorization and execution are separate concerns. Export does not change infrastructure.
+- **Security audit:** A clean npm audit is a useful dependency check, not a comprehensive vulnerability assessment.
+- **Production readiness:** Enterprise identity integration, stronger session controls, operational hardening and additional end-to-end tests remain future work.
+
+---
+
+## Roadmap
+
+### Implemented Capabilities
+
+- Kubernetes resource monitoring
+- Cluster health dashboard and scoring
+- Prometheus integration
+- Performance analytics
+- Operational health summaries
+- Global resource search
 - Command Palette
-- Incident Center
-- Container Log Inspection
-- PDF Export
-- Auto Refresh
-- Responsive UI
-- CloudOps Operational Finding Export
-- Authenticated CloudOps Delivery
-- Role-Scoped API Authentication
-- Viewer Read Access Boundary
-- Operator and Admin Authorization Boundary
-- Broader Endpoint RBAC
-- Authenticated `/auth/me` Identity Endpoint
-- Frontend Runtime Token Validation
-- Session-Scoped Frontend API Access
-- Backend Security Tests
-- CI Validation
-- Frontend Dependency Security Remediation
-- Frontend Bundle Code Splitting
+- Incident investigation
+- Container log inspection
+- PDF export
+- Responsive React interface
+- CloudOps operational finding export
+- Authenticated outbound CloudOps delivery
+- Role-scoped FastAPI authentication
+- Protected read and operational endpoints
+- Authenticated `/auth/me` endpoint
+- Frontend token validation and session handling
+- Security and integration regression tests
+- GitHub Actions backend/frontend validation
+- Frontend code splitting
+- Frontend dependency security remediation
 
-### 🚀 Future Extensions
+### Future Improvements
 
-- End-user authentication / SSO
-- OIDC identity-provider integration
-- Microsoft Entra ID integration
-- Multi-cluster Support
-- Historical Metrics
-- WebSocket Live Updates
-- Grafana Integration
-- Helm Monitoring
-- Expanded LLM-assisted Root Cause Analysis
+- OIDC and external identity-provider integration
+- Short-lived access tokens and managed sessions
+- Multi-cluster operations
+- Historical metrics persistence
+- Expanded monitoring integrations
+- Additional automated frontend tests
+- End-to-end Kubernetes integration tests
+- Improved application and deployment observability
+- Expanded AI-assisted analysis with independent evaluation
+- Production-oriented deployment and security hardening
 
----
-
-# 💡 Use Cases
-
-PlatformPilot helps Platform Engineers, DevOps Engineers, and SREs:
-
-- monitor Kubernetes cluster health
-- investigate unhealthy workloads
-- search Kubernetes resources
-- analyze Prometheus metrics
-- detect operational incidents
-- review container logs
-- troubleshoot deployments
-- generate structured operational findings
-- enforce read vs operational permissions
-- export incidents into controlled CloudOps workflows
-- accelerate incident investigation and response
+Future enhancements are not presented as already implemented.
 
 ---
 
-# 🔒 Security Notes
+## Engineering Skills Demonstrated
 
-PlatformPilot follows a fail-closed approach for protected APIs.
+**Platform Engineering**
+- Kubernetes operational visibility
+- Resource and workload investigation
+- Incident handling and analysis
+- Service-to-service integration
+- Operational security boundaries
 
-No PlatformPilot authentication tokens are committed to source code.
+**Backend Development**
+- FastAPI application design
+- Python service integration
+- API authentication and authorization
+- Error handling and regression testing
 
-Environment variables are used for:
+**Frontend Engineering**
+- React and Vite
+- Responsive operational dashboards
+- Resource search and navigation
+- Browser-session authentication
+- Data visualization and performance-oriented code splitting
 
-```text
-PLATFORM_VIEWER_TOKEN
-PLATFORM_OPERATOR_TOKEN
-PLATFORM_ADMIN_TOKEN
-CLOUDOPS_INGEST_TOKEN
-```
-
-The role hierarchy is:
-
-```text
-viewer
-   │
-   ▼
-operator
-   │
-   ▼
-admin
-```
-
-Higher roles inherit the permissions of lower roles.
-
-Public endpoints such as:
-
-```text
-/
-GET /health
-```
-
-remain available without authentication for basic service discovery and health checking.
-
-Protected API endpoints require a valid PlatformPilot bearer token.
-
-Operational actions require the appropriate role.
-
-The browser validates tokens through `/auth/me` before treating the session as authenticated.
-
-The current bearer-token system is intentionally lightweight and suitable for the lab environment.
-
-A future production identity implementation can replace the development token mechanism with OIDC or SSO while preserving the existing authorization model.
+**DevOps and Security**
+- GitHub Actions CI
+- Pytest and ESLint
+- Production asset builds
+- Dependency vulnerability remediation
+- Authentication and role-based access controls
 
 ---
 
-# 🤝 Contributing
+## Contributing
 
-Contributions are welcome.
+Contributions and suggestions are welcome.
 
-Please read:
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
-```text
-CONTRIBUTING.md
-```
+## License
 
-before opening a pull request.
+Licensed under the [MIT License](LICENSE).
 
----
-
-# 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-# 👨‍💻 Author
+## Author
 
 **Olawale Azeez**
 
-GitHub: https://github.com/AZ1600
+Cloud Engineer | Platform Engineer | DevOps Engineer
 
----
-
-<p align="center">
-
-⭐ If you found PlatformPilot useful, please consider giving the repository a star!
-
-</p>
+[GitHub](https://github.com/AZ1600) · [Portfolio](https://az1600.github.io/)
