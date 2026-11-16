@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 import requests
@@ -58,6 +59,11 @@ def query_prometheus(query: str) -> list[dict[str, Any]]:
             "Prometheus returned an invalid JSON response."
         ) from exc
 
+    if not isinstance(payload, dict):
+        raise PrometheusQueryError(
+            "Prometheus returned an unexpected response format."
+        )
+
     if payload.get("status") != "success":
         error_type = payload.get("errorType", "unknown")
         error_message = payload.get(
@@ -70,7 +76,16 @@ def query_prometheus(query: str) -> list[dict[str, Any]]:
             f"({error_type}): {error_message}"
         )
 
-    return payload.get("data", {}).get("result", [])
+    data = payload.get("data")
+    results = data.get("result") if isinstance(data, dict) else None
+    if not isinstance(results, list) or any(
+        not isinstance(item, dict) for item in results
+    ):
+        raise PrometheusQueryError(
+            "Prometheus returned an unexpected response format."
+        )
+
+    return results
 
 
 def extract_number(
@@ -83,15 +98,7 @@ def extract_number(
     if not result:
         return 0.0
 
-    value = result[0].get("value")
-
-    if not value or len(value) < 2:
-        return 0.0
-
-    try:
-        return float(value[1])
-    except (TypeError, ValueError):
-        return 0.0
+    return parse_result_value(result[0])
 
 
 def parse_result_value(
@@ -101,15 +108,26 @@ def parse_result_value(
     Safely convert one Prometheus result value into a float.
     """
 
-    value = item.get("value", [None, "0"])
+    sample = item.get("value")
 
-    if len(value) < 2:
-        return 0.0
+    if not isinstance(sample, (list, tuple)) or len(sample) < 2:
+        raise PrometheusQueryError(
+            "Prometheus returned a malformed metric sample."
+        )
 
     try:
-        return float(value[1])
-    except (TypeError, ValueError):
-        return 0.0
+        number = float(sample[1])
+    except (TypeError, ValueError) as exc:
+        raise PrometheusQueryError(
+            "Prometheus returned a non-numeric metric sample."
+        ) from exc
+
+    if not math.isfinite(number):
+        raise PrometheusQueryError(
+            "Prometheus returned a non-finite metric sample."
+        )
+
+    return number
 
 
 def get_prometheus_health() -> dict[str, Any]:
